@@ -1,0 +1,2667 @@
+openapi: 3.1.0
+info:
+  title: Project Management API
+  version: 1.0.0
+  description: REST API for a project management application with teams, projects, tasks, comments, attachments, labels, and notifications.
+
+servers:
+  - url: /api
+    description: API base path
+
+security:
+  - tokenAuth: []
+
+components:
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Bearer token — pass as `Bearer {token}`
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+          description: Only visible to the user themselves or admins
+        role:
+          type: string
+          enum: [admin, member]
+        avatar_url:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Team:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        owner_id:
+          type: integer
+        owner:
+          $ref: '#/components/schemas/User'
+        members_count:
+          type: integer
+        projects_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TeamMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        team_id:
+          type: integer
+        user_id:
+          type: integer
+        role:
+          type: string
+          enum: [owner, admin, member]
+        user:
+          $ref: '#/components/schemas/User'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        team_id:
+          type: integer
+        name:
+          type: string
+        key:
+          type: string
+          description: Uppercase alphanumeric project key, unique per team
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, archived]
+        color:
+          type: string
+          nullable: true
+        created_by:
+          type: integer
+        team:
+          $ref: '#/components/schemas/Team'
+        creator:
+          $ref: '#/components/schemas/User'
+        members_count:
+          type: integer
+        tasks_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ProjectMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        project_id:
+          type: integer
+        user_id:
+          type: integer
+        role:
+          type: string
+          enum: [lead, contributor, viewer]
+        user:
+          $ref: '#/components/schemas/User'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Label:
+      type: object
+      properties:
+        id:
+          type: integer
+        project_id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        project_id:
+          type: integer
+        parent_id:
+          type: integer
+          nullable: true
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [todo, in_progress, in_review, done, cancelled]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        assignee_id:
+          type: integer
+          nullable: true
+        reporter_id:
+          type: integer
+          nullable: true
+        assignee:
+          $ref: '#/components/schemas/User'
+        reporter:
+          $ref: '#/components/schemas/User'
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        position:
+          type: integer
+        is_overdue:
+          type: boolean
+        comments_count:
+          type: integer
+        attachments_count:
+          type: integer
+        subtasks_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TaskList:
+      type: object
+      description: Lightweight task representation — omits description field
+      properties:
+        id:
+          type: integer
+        project_id:
+          type: integer
+        parent_id:
+          type: integer
+          nullable: true
+        title:
+          type: string
+        status:
+          type: string
+          enum: [todo, in_progress, in_review, done, cancelled]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        assignee_id:
+          type: integer
+          nullable: true
+        reporter_id:
+          type: integer
+          nullable: true
+        assignee:
+          $ref: '#/components/schemas/User'
+        reporter:
+          $ref: '#/components/schemas/User'
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        position:
+          type: integer
+        is_overdue:
+          type: boolean
+        comments_count:
+          type: integer
+        attachments_count:
+          type: integer
+        subtasks_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+        task_id:
+          type: integer
+        user_id:
+          type: integer
+        user:
+          $ref: '#/components/schemas/User'
+        body:
+          type: string
+        edited_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: integer
+        task_id:
+          type: integer
+        original_name:
+          type: string
+        mime:
+          type: string
+        size:
+          type: integer
+          description: File size in bytes
+        uploaded_by:
+          type: integer
+        uploader:
+          $ref: '#/components/schemas/User'
+        download_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+
+    ActivityLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+        causer_id:
+          type: integer
+          nullable: true
+        causer:
+          $ref: '#/components/schemas/User'
+        subject_type:
+          type: string
+        subject_id:
+          type: integer
+        properties:
+          type: object
+          nullable: true
+          additionalProperties: true
+        project_id:
+          type: integer
+          nullable: true
+        team_id:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+          nullable: true
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    ProjectStats:
+      type: object
+      description: Project statistics — exact shape depends on ProjectService.stats() implementation
+      additionalProperties: true
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        last_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        from:
+          type: integer
+          nullable: true
+        to:
+          type: integer
+          nullable: true
+
+    PaginationLinks:
+      type: object
+      properties:
+        first:
+          type: string
+          nullable: true
+        last:
+          type: string
+          nullable: true
+        prev:
+          type: string
+          nullable: true
+        next:
+          type: string
+          nullable: true
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+
+  parameters:
+    PerPage:
+      name: per_page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+paths:
+  /health:
+    get:
+      operationId: health.check
+      summary: Health check
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /auth/register:
+    post:
+      operationId: auth.register
+      summary: Register a new user
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 255
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /auth/login:
+    post:
+      operationId: auth.login
+      summary: Log in and obtain an API token
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Authenticated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /auth/logout:
+    post:
+      operationId: auth.logout
+      summary: Log out (invalidate API token)
+      tags: [Auth]
+      responses:
+        '204':
+          description: Logged out successfully
+        '401':
+          description: Unauthenticated
+
+  /auth/me:
+    get:
+      operationId: auth.me
+      summary: Get the authenticated user
+      tags: [Auth]
+      responses:
+        '200':
+          description: Authenticated user profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated
+
+  /auth/profile:
+    patch:
+      operationId: auth.updateProfile
+      summary: Update the authenticated user's profile
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                avatar_url:
+                  type: string
+                  nullable: true
+                  maxLength: 2048
+                timezone:
+                  type: string
+                  maxLength: 64
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /auth/password:
+    post:
+      operationId: auth.changePassword
+      summary: Change the authenticated user's password
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password:
+                  type: string
+                new_password:
+                  type: string
+                  minLength: 8
+                  maxLength: 255
+      responses:
+        '204':
+          description: Password changed successfully
+        '401':
+          description: Unauthenticated
+        '422':
+          description: Validation error (e.g. current password incorrect)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /users:
+    get:
+      operationId: users.index
+      summary: List users
+      tags: [Users]
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: q
+          in: query
+          description: Search by name or email
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          description: Unauthenticated
+
+  /users/{user}:
+    parameters:
+      - name: user
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: users.show
+      summary: Get a user by ID
+      tags: [Users]
+      responses:
+        '200':
+          description: User resource
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Not found
+    patch:
+      operationId: users.update
+      summary: Update a user (admin only)
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+                role:
+                  type: string
+                  enum: [admin, member]
+                avatar_url:
+                  type: string
+                  nullable: true
+                  maxLength: 2048
+                timezone:
+                  type: string
+                  maxLength: 64
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden (admin only)
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      operationId: users.destroy
+      summary: Delete a user (admin only)
+      tags: [Users]
+      responses:
+        '204':
+          description: User deleted
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden (admin only)
+        '404':
+          description: Not found
+
+  /teams:
+    get:
+      operationId: teams.index
+      summary: List teams the authenticated user belongs to
+      tags: [Teams]
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Paginated list of teams
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Team'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          description: Unauthenticated
+    post:
+      operationId: teams.store
+      summary: Create a new team
+      tags: [Teams]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                slug:
+                  type: string
+                  maxLength: 255
+                  pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+                description:
+                  type: string
+                  nullable: true
+      responses:
+        '201':
+          description: Team created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Team'
+        '401':
+          description: Unauthenticated
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /teams/{team}:
+    parameters:
+      - name: team
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: teams.show
+      summary: Get a team by ID
+      tags: [Teams]
+      responses:
+        '200':
+          description: Team resource
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Team'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+    patch:
+      operationId: teams.update
+      summary: Update a team
+      tags: [Teams]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                slug:
+                  type: string
+                  maxLength: 255
+                  pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+                description:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Team updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Team'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      operationId: teams.destroy
+      summary: Delete a team
+      tags: [Teams]
+      responses:
+        '204':
+          description: Team deleted
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+
+  /teams/{team}/members:
+    parameters:
+      - name: team
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: teamMembers.index
+      summary: List members of a team
+      tags: [Team Members]
+      responses:
+        '200':
+          description: List of team members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeamMember'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+    post:
+      operationId: teamMembers.store
+      summary: Invite a user to the team by email
+      tags: [Team Members]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+                role:
+                  type: string
+                  enum: [owner, admin, member]
+      responses:
+        '201':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TeamMember'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /teams/{team}/members/{user}:
+    parameters:
+      - name: team
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: user
+        in: path
+        required: true
+        schema:
+          type: integer
+    patch:
+      operationId: teamMembers.update
+      summary: Update a team member's role
+      tags: [Team Members]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [owner, admin, member]
+      responses:
+        '200':
+          description: Member updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TeamMember'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      operationId: teamMembers.destroy
+      summary: Remove a member from the team
+      tags: [Team Members]
+      responses:
+        '204':
+          description: Member removed
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+
+  /teams/{team}/projects:
+    parameters:
+      - name: team
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: projects.index
+      summary: List projects in a team
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Paginated list of projects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+    post:
+      operationId: projects.store
+      summary: Create a project in a team
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, key]
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                key:
+                  type: string
+                  maxLength: 16
+                  pattern: '^[A-Z0-9]+$'
+                  description: Uppercase alphanumeric, unique per team
+                description:
+                  type: string
+                  nullable: true
+                status:
+                  type: string
+                  enum: [active, archived]
+                color:
+                  type: string
+                  nullable: true
+                  maxLength: 32
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /projects/{project}:
+    parameters:
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: projects.show
+      summary: Get a project by ID
+      tags: [Projects]
+      responses:
+        '200':
+          description: Project resource
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+    patch:
+      operationId: projects.update
+      summary: Update a project
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                key:
+                  type: string
+                  maxLength: 16
+                  pattern: '^[A-Z0-9]+$'
+                description:
+                  type: string
+                  nullable: true
+                status:
+                  type: string
+                  enum: [active, archived]
+                color:
+                  type: string
+                  nullable: true
+                  maxLength: 32
+      responses:
+        '200':
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      operationId: projects.destroy
+      summary: Delete a project
+      tags: [Projects]
+      responses:
+        '204':
+          description: Project deleted
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+
+  /projects/{project}/archive:
+    parameters:
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: projects.archive
+      summary: Archive a project
+      tags: [Projects]
+      responses:
+        '200':
+          description: Project archived
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /projects/{project}/restore:
+    parameters:
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: projects.restore
+      summary: Restore an archived project
+      tags: [Projects]
+      responses:
+        '200':
+          description: Project restored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /projects/{project}/stats:
+    parameters:
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: projects.stats
+      summary: Get project statistics
+      tags: [Projects]
+      responses:
+        '200':
+          description: Project stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ProjectStats'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /projects/{project}/members:
+    parameters:
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: projectMembers.index
+      summary: List members of a project
+      tags: [Project Members]
+      responses:
+        '200':
+          description: List of project members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProjectMember'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+    post:
+      operationId: projectMembers.store
+      summary: Add a member to a project
+      tags: [Project Members]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, role]
+              properties:
+                user_id:
+                  type: integer
+                role:
+                  type: string
+                  enum: [lead, contributor, viewer]
+      responses:
+        '201':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ProjectMember'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /projects/{project}/members/{user}:
+    parameters:
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: user
+        in: path
+        required: true
+        schema:
+          type: integer
+    patch:
+      operationId: projectMembers.update
+      summary: Update a project member's role
+      tags: [Project Members]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [lead, contributor, viewer]
+      responses:
+        '200':
+          description: Member updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ProjectMember'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      operationId: projectMembers.destroy
+      summary: Remove a member from a project
+      tags: [Project Members]
+      responses:
+        '204':
+          description: Member removed
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /projects/{project}/activity:
+    parameters:
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: activity.forProject
+      summary: Get activity log for a project
+      tags: [Activity]
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Paginated activity log
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivityLog'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /projects/{project}/labels:
+    parameters:
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: labels.index
+      summary: List labels for a project
+      tags: [Labels]
+      responses:
+        '200':
+          description: List of labels
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Label'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+    post:
+      operationId: labels.store
+      summary: Create a label in a project
+      tags: [Labels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, color]
+              properties:
+                name:
+                  type: string
+                  maxLength: 64
+                color:
+                  type: string
+                  maxLength: 32
+                  description: Hex color value (e.g. #FF5733)
+      responses:
+        '201':
+          description: Label created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Label'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /labels/{label}:
+    parameters:
+      - name: label
+        in: path
+        required: true
+        schema:
+          type: integer
+    patch:
+      operationId: labels.update
+      summary: Update a label
+      tags: [Labels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 64
+                color:
+                  type: string
+                  maxLength: 32
+      responses:
+        '200':
+          description: Label updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Label'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      operationId: labels.destroy
+      summary: Delete a label
+      tags: [Labels]
+      responses:
+        '204':
+          description: Label deleted
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /projects/{project}/tasks:
+    parameters:
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: tasks.index
+      summary: List tasks in a project
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [todo, in_progress, in_review, done, cancelled]
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, urgent]
+        - name: assignee_id
+          in: query
+          schema:
+            type: integer
+        - name: label_id
+          in: query
+          schema:
+            type: integer
+        - name: due_before
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: due_after
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: q
+          in: query
+          description: Search by title or description
+          schema:
+            type: string
+            maxLength: 255
+        - name: overdue
+          in: query
+          schema:
+            type: boolean
+        - name: parent_id
+          in: query
+          schema:
+            type: integer
+        - name: root
+          in: query
+          description: Return only root-level tasks (no parent)
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, due_date, priority, position, title]
+            default: position
+        - name: dir
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        '200':
+          description: Paginated list of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaskList'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+    post:
+      operationId: tasks.store
+      summary: Create a task in a project
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                  nullable: true
+                status:
+                  type: string
+                  enum: [todo, in_progress, in_review, done, cancelled]
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+                assignee_id:
+                  type: integer
+                  nullable: true
+                parent_id:
+                  type: integer
+                  nullable: true
+                due_date:
+                  type: string
+                  format: date
+                  nullable: true
+                position:
+                  type: integer
+                  minimum: 0
+                label_ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /tasks/{task}:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: tasks.show
+      summary: Get a task by ID
+      tags: [Tasks]
+      responses:
+        '200':
+          description: Task resource
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+    patch:
+      operationId: tasks.update
+      summary: Update a task
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                  nullable: true
+                status:
+                  type: string
+                  enum: [todo, in_progress, in_review, done, cancelled]
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+                assignee_id:
+                  type: integer
+                  nullable: true
+                parent_id:
+                  type: integer
+                  nullable: true
+                due_date:
+                  type: string
+                  format: date
+                  nullable: true
+                position:
+                  type: integer
+                  minimum: 0
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      operationId: tasks.destroy
+      summary: Delete a task
+      tags: [Tasks]
+      responses:
+        '204':
+          description: Task deleted
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /tasks/{task}/assign:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: tasks.assign
+      summary: Assign a user to a task
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id:
+                  type: integer
+      responses:
+        '200':
+          description: Task with assignee
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /tasks/{task}/unassign:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: tasks.unassign
+      summary: Unassign the current assignee from a task
+      tags: [Tasks]
+      responses:
+        '200':
+          description: Task with assignee removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /tasks/{task}/status:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: tasks.transition
+      summary: Transition a task to a new status
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [todo, in_progress, in_review, done, cancelled]
+      responses:
+        '200':
+          description: Task with updated status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /tasks/{task}/priority:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: tasks.priority
+      summary: Update the priority of a task
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [priority]
+              properties:
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+      responses:
+        '200':
+          description: Task with updated priority
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /tasks/{task}/labels:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: tasks.syncLabels
+      summary: Sync labels on a task (replaces existing labels)
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label_ids]
+              properties:
+                label_ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        '200':
+          description: Task with updated labels
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /tasks/{task}/subtasks:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: tasks.subtasks
+      summary: List subtasks of a task
+      tags: [Tasks]
+      responses:
+        '200':
+          description: List of subtasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaskList'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+    post:
+      operationId: tasks.storeSubtask
+      summary: Create a subtask under a task
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                  nullable: true
+                status:
+                  type: string
+                  enum: [todo, in_progress, in_review, done, cancelled]
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+                assignee_id:
+                  type: integer
+                  nullable: true
+                due_date:
+                  type: string
+                  format: date
+                  nullable: true
+                position:
+                  type: integer
+                  minimum: 0
+                label_ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        '201':
+          description: Subtask created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /tasks/{task}/reorder:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: tasks.reorder
+      summary: Reorder a task to a new position
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [position]
+              properties:
+                position:
+                  type: integer
+                  minimum: 0
+      responses:
+        '200':
+          description: Task with updated position
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /tasks/{task}/activity:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: tasks.activity
+      summary: Get activity log for a task
+      tags: [Activity]
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Paginated activity log for the task
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivityLog'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /tasks/{task}/comments:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: comments.indexForTask
+      summary: List comments on a task
+      tags: [Comments]
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Paginated list of comments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+    post:
+      operationId: comments.storeForTask
+      summary: Add a comment to a task
+      tags: [Comments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+                  maxLength: 10000
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Comment'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /comments/{comment}:
+    parameters:
+      - name: comment
+        in: path
+        required: true
+        schema:
+          type: integer
+    patch:
+      operationId: comments.update
+      summary: Update a comment
+      tags: [Comments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                  maxLength: 10000
+      responses:
+        '200':
+          description: Comment updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Comment'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      operationId: comments.destroy
+      summary: Delete a comment
+      tags: [Comments]
+      responses:
+        '204':
+          description: Comment deleted
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /tasks/{task}/attachments:
+    parameters:
+      - name: task
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: attachments.indexForTask
+      summary: List attachments on a task
+      tags: [Attachments]
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Paginated list of attachments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attachment'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+    post:
+      operationId: attachments.storeForTask
+      summary: Upload an attachment to a task
+      tags: [Attachments]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File to upload (max 20 MB)
+      responses:
+        '201':
+          description: Attachment uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Attachment'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /attachments/{attachment}/download:
+    parameters:
+      - name: attachment
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: attachments.download
+      summary: Download an attachment
+      tags: [Attachments]
+      responses:
+        '200':
+          description: File download stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+
+  /attachments/{attachment}:
+    parameters:
+      - name: attachment
+        in: path
+        required: true
+        schema:
+          type: integer
+    delete:
+      operationId: attachments.destroy
+      summary: Delete an attachment
+      tags: [Attachments]
+      responses:
+        '204':
+          description: Attachment deleted
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /notifications:
+    get:
+      operationId: notifications.index
+      summary: List notifications for the authenticated user
+      tags: [Notifications]
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: unread
+          in: query
+          description: Filter to only unread notifications
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Paginated list of notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          description: Unauthenticated
+
+  /notifications/read-all:
+    post:
+      operationId: notifications.markAllRead
+      summary: Mark all notifications as read
+      tags: [Notifications]
+      responses:
+        '200':
+          description: Number of updated notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: integer
+        '401':
+          description: Unauthenticated
+
+  /notifications/{notification}/read:
+    parameters:
+      - name: notification
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: notifications.markRead
+      summary: Mark a notification as read
+      tags: [Notifications]
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /notifications/{notification}:
+    parameters:
+      - name: notification
+        in: path
+        required: true
+        schema:
+          type: integer
+    delete:
+      operationId: notifications.destroy
+      summary: Delete a notification
+      tags: [Notifications]
+      responses:
+        '204':
+          description: Notification deleted
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+
+  /activity:
+    get:
+      operationId: activity.index
+      summary: Get global activity log (filtered by user membership)
+      tags: [Activity]
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: team_id
+          in: query
+          schema:
+            type: integer
+        - name: project_id
+          in: query
+          schema:
+            type: integer
+        - name: causer_id
+          in: query
+          schema:
+            type: integer
+        - name: action
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated activity log
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivityLog'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          description: Unauthenticated
+
+  /dashboard:
+    get:
+      operationId: dashboard.index
+      summary: Get dashboard data for the authenticated user
+      tags: [Dashboard]
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  my_tasks_by_status:
+                    type: object
+                    properties:
+                      todo:
+                        type: integer
+                      in_progress:
+                        type: integer
+                      in_review:
+                        type: integer
+                      done:
+                        type: integer
+                      cancelled:
+                        type: integer
+                  upcoming:
+                    type: array
+                    description: Tasks due in the next 7 days (max 10)
+                    items:
+                      $ref: '#/components/schemas/TaskList'
+                  overdue_count:
+                    type: integer
+                  recent_activity:
+                    type: array
+                    description: Last 15 activity log entries by the authenticated user
+                    items:
+                      $ref: '#/components/schemas/ActivityLog'
+        '401':
+          description: Unauthenticated
+
+  /search:
+    get:
+      operationId: search.index
+      summary: Search across projects, tasks, and comments
+      tags: [Search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query (min 2 characters)
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 255
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaskList'
+                  comments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+        '401':
+          description: Unauthenticated
+        '422':
+          description: Validation error (query too short)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+tags:
+  - name: Health
+    description: Service health check
+  - name: Auth
+    description: Authentication and profile management
+  - name: Users
+    description: User management
+  - name: Teams
+    description: Team management
+  - name: Team Members
+    description: Team membership management
+  - name: Projects
+    description: Project management
+  - name: Project Members
+    description: Project membership management
+  - name: Labels
+    description: Label management per project
+  - name: Tasks
+    description: Task management
+  - name: Comments
+    description: Task comments
+  - name: Attachments
+    description: Task file attachments
+  - name: Notifications
+    description: User notifications
+  - name: Activity
+    description: Activity log
+  - name: Dashboard
+    description: User dashboard summary
+  - name: Search
+    description: Full-text search
