@@ -13,6 +13,7 @@ class HealthController extends Controller
             'status' => 'ok',
             'timestamp' => now()->toIso8601String(),
             'version' => config('app.version', '1.0.0'),
+            'environment' => config('app.env'),
         ]);
     }
 }
