@@ -42,12 +42,14 @@ security:
 paths:
   /health:
     get:
-      tags: [Health]
+      tags:
+        - Health
       summary: Health check
-      description: Returns a static status payload with the current server timestamp and application version. No authentication required.
+      description: Returns a static status payload with only the service status. No
+        authentication required.
       security: []
       responses:
-        '200':
+        "200":
           description: Service is healthy.
           content:
             application/json:
@@ -57,18 +59,11 @@ paths:
                   status:
                     type: string
                     example: ok
-                  timestamp:
-                    type: string
-                    format: date-time
-                    description: Server time when the probe was handled (ISO 8601).
-                  version:
-                    type: string
-                    description: The configured application version.
-                    example: 1.0.0
-                required: [status, timestamp, version]
+                required:
+                  - status
   /auth/register:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Register a new user
       description: Creates a user account and returns the user together with an API token.
       security: []
@@ -89,9 +84,10 @@ paths:
           $ref: '#/components/responses/ValidationError'
   /auth/login:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Log in
-      description: Validates credentials and returns the user together with a fresh API token.
+      description: Validates credentials and returns the user together with a fresh
+        API token.
       security: []
       requestBody:
         required: true
@@ -110,7 +106,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
   /auth/logout:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Log out
       description: Revokes the current API token for the authenticated user.
       responses:
@@ -120,7 +116,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
   /auth/me:
     get:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Get the authenticated user
       responses:
         '200':
@@ -133,7 +129,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
   /auth/profile:
     patch:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Update the authenticated user profile
       requestBody:
         required: true
@@ -154,7 +150,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
   /auth/password:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Change the authenticated user password
       requestBody:
         required: true
@@ -174,9 +170,10 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TeamId'
     get:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: List projects for a team
-      description: Returns a paginated list of projects in the team that the authenticated user may view.
+      description: Returns a paginated list of projects in the team that the
+        authenticated user may view.
       parameters:
         - $ref: '#/components/parameters/PerPage'
       responses:
@@ -193,7 +190,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Create a project
       requestBody:
         required: true
@@ -220,7 +217,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Get a project
       responses:
         '200':
@@ -236,7 +233,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Update a project
       requestBody:
         required: true
@@ -260,7 +257,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Delete a project
       responses:
         '204':
@@ -275,7 +272,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     post:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Archive a project
       description: Sets the project status to archived.
       responses:
@@ -295,7 +292,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     post:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Restore a project
       description: Sets the project status back to active.
       responses:
@@ -315,7 +312,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Get project statistics
       responses:
         '200':
@@ -335,7 +332,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Project Members]
+      tags: [ Project Members ]
       summary: List project members
       responses:
         '200':
@@ -351,7 +348,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [Project Members]
+      tags: [ Project Members ]
       summary: Add a member to a project
       requestBody:
         required: true
@@ -379,7 +376,7 @@ paths:
       - $ref: '#/components/parameters/ProjectId'
       - $ref: '#/components/parameters/UserId'
     patch:
-      tags: [Project Members]
+      tags: [ Project Members ]
       summary: Update a project member role
       requestBody:
         required: true
@@ -403,7 +400,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Project Members]
+      tags: [ Project Members ]
       summary: Remove a member from a project
       description: >
         Removes a member from the project. The only remaining lead cannot be
@@ -424,7 +421,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Activity]
+      tags: [ Activity ]
       summary: List activity for a project
       parameters:
         - $ref: '#/components/parameters/PerPage'
@@ -446,7 +443,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Labels]
+      tags: [ Labels ]
       summary: List project labels
       responses:
         '200':
@@ -462,7 +459,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [Labels]
+      tags: [ Labels ]
       summary: Create a label
       requestBody:
         required: true
@@ -489,7 +486,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/LabelId'
     patch:
-      tags: [Labels]
+      tags: [ Labels ]
       summary: Update a label
       requestBody:
         required: true
@@ -513,7 +510,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Labels]
+      tags: [ Labels ]
       summary: Delete a label
       responses:
         '204':
@@ -529,9 +526,10 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: List tasks in a project
-      description: Returns a paginated list of tasks with rich filtering, sorting and search.
+      description: Returns a paginated list of tasks with rich filtering, sorting and
+        search.
       parameters:
         - name: status
           in: query
@@ -597,14 +595,14 @@ paths:
           required: false
           schema:
             type: string
-            enum: [created_at, due_date, priority, position, title]
+            enum: [ created_at, due_date, priority, position, title ]
             default: position
         - name: dir
           in: query
           required: false
           schema:
             type: string
-            enum: [asc, desc]
+            enum: [ asc, desc ]
             default: asc
         - $ref: '#/components/parameters/PerPage'
       responses:
@@ -623,7 +621,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     post:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Create a task
       requestBody:
         required: true
@@ -650,7 +648,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     get:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Get a task
       responses:
         '200':
@@ -666,7 +664,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Update a task
       requestBody:
         required: true
@@ -690,7 +688,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Delete a task
       responses:
         '204':
@@ -705,7 +703,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Assign a task to a user
       requestBody:
         required: true
@@ -732,7 +730,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Unassign a task
       responses:
         '200':
@@ -751,7 +749,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Transition task status
       requestBody:
         required: true
@@ -778,7 +776,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Update task priority
       requestBody:
         required: true
@@ -805,7 +803,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Sync task labels
       description: Replaces the set of labels attached to the task with the provided ids.
       requestBody:
@@ -833,7 +831,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     get:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: List subtasks of a task
       responses:
         '200':
@@ -849,7 +847,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Create a subtask
       description: Creates a task whose parent is the referenced task.
       requestBody:
@@ -877,7 +875,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
-      tags: [Tasks]
+      tags: [ Tasks ]
       summary: Reorder a task
       description: Moves the task to the given zero-based position within its sibling set.
       requestBody:
@@ -905,7 +903,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     get:
-      tags: [Activity]
+      tags: [ Activity ]
       summary: List activity for a task
       parameters:
         - $ref: '#/components/parameters/PerPage'
@@ -927,7 +925,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     get:
-      tags: [Comments]
+      tags: [ Comments ]
       summary: List comments for a task
       parameters:
         - $ref: '#/components/parameters/PerPage'
@@ -945,7 +943,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [Comments]
+      tags: [ Comments ]
       summary: Create a comment on a task
       requestBody:
         required: true
@@ -972,7 +970,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/CommentId'
     patch:
-      tags: [Comments]
+      tags: [ Comments ]
       summary: Update a comment
       requestBody:
         required: true
@@ -996,7 +994,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Comments]
+      tags: [ Comments ]
       summary: Delete a comment
       responses:
         '204':
@@ -1012,7 +1010,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     get:
-      tags: [Attachments]
+      tags: [ Attachments ]
       summary: List attachments for a task
       parameters:
         - $ref: '#/components/parameters/PerPage'
@@ -1030,7 +1028,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [Attachments]
+      tags: [ Attachments ]
       summary: Upload an attachment to a task
       requestBody:
         required: true
@@ -1043,7 +1041,7 @@ paths:
                   type: string
                   format: binary
                   description: The file to upload. Maximum size 20480 KB.
-              required: [file]
+              required: [ file ]
       responses:
         '201':
           description: Attachment created.
@@ -1063,7 +1061,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/AttachmentId'
     get:
-      tags: [Attachments]
+      tags: [ Attachments ]
       summary: Download an attachment
       responses:
         '200':
@@ -1083,7 +1081,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/AttachmentId'
     delete:
-      tags: [Attachments]
+      tags: [ Attachments ]
       summary: Delete an attachment
       responses:
         '204':
@@ -1097,7 +1095,7 @@ paths:
 
   /notifications:
     get:
-      tags: [Notifications]
+      tags: [ Notifications ]
       summary: List notifications
       description: Returns the authenticated user's notifications, most recent first.
       parameters:
@@ -1119,7 +1117,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
   /notifications/read-all:
     post:
-      tags: [Notifications]
+      tags: [ Notifications ]
       summary: Mark all notifications as read
       responses:
         '200':
@@ -1137,7 +1135,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/NotificationId'
     post:
-      tags: [Notifications]
+      tags: [ Notifications ]
       summary: Mark a notification as read
       responses:
         '200':
@@ -1156,7 +1154,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/NotificationId'
     delete:
-      tags: [Notifications]
+      tags: [ Notifications ]
       summary: Delete a notification
       responses:
         '204':
@@ -1170,7 +1168,7 @@ paths:
 
   /activity:
     get:
-      tags: [Activity]
+      tags: [ Activity ]
       summary: List global activity
       description: >
         Returns a paginated activity feed scoped to the teams and projects the
@@ -1212,7 +1210,7 @@ paths:
 
   /dashboard:
     get:
-      tags: [Dashboard]
+      tags: [ Dashboard ]
       summary: Get the authenticated user dashboard
       description: >
         Returns the authenticated user's task counts by status, upcoming tasks
@@ -1229,7 +1227,7 @@ paths:
 
   /search:
     get:
-      tags: [Search]
+      tags: [ Search ]
       summary: Search across projects, tasks and comments
       parameters:
         - name: q
@@ -1413,16 +1411,17 @@ components:
           type: integer
     TaskStatus:
       type: string
-      enum: [todo, in_progress, in_review, done, cancelled]
+      enum: [ todo, in_progress, in_review, done, cancelled ]
     TaskPriority:
       type: string
-      enum: [low, medium, high, urgent]
+      enum: [ low, medium, high, urgent ]
     ProjectMemberRole:
       type: string
-      enum: [lead, contributor, viewer]
+      enum: [ lead, contributor, viewer ]
     User:
       type: object
-      description: A user. The email field is only present when the requester may see this address.
+      description: A user. The email field is only present when the requester may see
+        this address.
       properties:
         id:
           type: integer
@@ -1434,7 +1433,7 @@ components:
           format: email
         role:
           type: string
-          enum: [admin, member]
+          enum: [ admin, member ]
         avatar_url:
           type: string
           nullable: true
@@ -1445,7 +1444,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, name, role]
+      required: [ id, name, role ]
     UserEnvelope:
       type: object
       properties:
@@ -1453,14 +1452,15 @@ components:
           $ref: '#/components/schemas/User'
     AuthResponse:
       type: object
-      description: Returned by register and login. The user is NOT wrapped in a data envelope here.
+      description: Returned by register and login. The user is NOT wrapped in a data
+        envelope here.
       properties:
         user:
           $ref: '#/components/schemas/User'
         token:
           type: string
           description: API token to be presented as a bearer token on subsequent requests.
-      required: [user, token]
+      required: [ user, token ]
     RegisterRequest:
       type: object
       properties:
@@ -1475,7 +1475,7 @@ components:
           type: string
           minLength: 8
           maxLength: 255
-      required: [name, email, password]
+      required: [ name, email, password ]
     LoginRequest:
       type: object
       properties:
@@ -1485,10 +1485,11 @@ components:
           maxLength: 255
         password:
           type: string
-      required: [email, password]
+      required: [ email, password ]
     UpdateProfileRequest:
       type: object
-      description: All fields optional; when present they must satisfy the listed constraints.
+      description: All fields optional; when present they must satisfy the listed
+        constraints.
       properties:
         name:
           type: string
@@ -1509,7 +1510,7 @@ components:
           type: string
           minLength: 8
           maxLength: 255
-      required: [current_password, new_password]
+      required: [ current_password, new_password ]
     Project:
       type: object
       properties:
@@ -1529,7 +1530,7 @@ components:
           nullable: true
         status:
           type: string
-          enum: [active, archived]
+          enum: [ active, archived ]
         color:
           type: string
           nullable: true
@@ -1555,7 +1556,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, team_id, name, key, status]
+      required: [ id, team_id, name, key, status ]
     TeamSummary:
       type: object
       description: Minimal team representation embedded in a project.
@@ -1626,15 +1627,16 @@ components:
           nullable: true
         status:
           type: string
-          enum: [active, archived]
+          enum: [ active, archived ]
         color:
           type: string
           maxLength: 32
           nullable: true
-      required: [name, key]
+      required: [ name, key ]
     UpdateProjectRequest:
       type: object
-      description: All fields optional; when present they must satisfy the listed constraints.
+      description: All fields optional; when present they must satisfy the listed
+        constraints.
       properties:
         name:
           type: string
@@ -1648,7 +1650,7 @@ components:
           nullable: true
         status:
           type: string
-          enum: [active, archived]
+          enum: [ active, archived ]
         color:
           type: string
           maxLength: 32
@@ -1700,13 +1702,13 @@ components:
           format: int64
         role:
           $ref: '#/components/schemas/ProjectMemberRole'
-      required: [user_id, role]
+      required: [ user_id, role ]
     UpdateProjectMemberRequest:
       type: object
       properties:
         role:
           $ref: '#/components/schemas/ProjectMemberRole'
-      required: [role]
+      required: [ role ]
     Label:
       type: object
       properties:
@@ -1728,7 +1730,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, project_id, name, color]
+      required: [ id, project_id, name, color ]
     LabelEnvelope:
       type: object
       properties:
@@ -1752,10 +1754,11 @@ components:
           type: string
           maxLength: 32
           pattern: '^#?[0-9a-fA-F]{3,8}$'
-      required: [name, color]
+      required: [ name, color ]
     UpdateLabelRequest:
       type: object
-      description: All fields optional; when present they must satisfy the listed constraints.
+      description: All fields optional; when present they must satisfy the listed
+        constraints.
       properties:
         name:
           type: string
@@ -1832,7 +1835,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, project_id, title, status, priority]
+      required: [ id, project_id, title, status, priority ]
     TaskListItem:
       type: object
       description: Lighter task representation used in collections (omits description).
@@ -1895,7 +1898,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, project_id, title, status, priority]
+      required: [ id, project_id, title, status, priority ]
     TaskEnvelope:
       type: object
       properties:
@@ -1952,10 +1955,11 @@ components:
           items:
             type: integer
             format: int64
-      required: [title]
+      required: [ title ]
     UpdateTaskRequest:
       type: object
-      description: All fields optional; when present they must satisfy the listed constraints.
+      description: All fields optional; when present they must satisfy the listed
+        constraints.
       properties:
         title:
           type: string
@@ -1988,19 +1992,19 @@ components:
         user_id:
           type: integer
           format: int64
-      required: [user_id]
+      required: [ user_id ]
     TransitionStatusRequest:
       type: object
       properties:
         status:
           $ref: '#/components/schemas/TaskStatus'
-      required: [status]
+      required: [ status ]
     UpdatePriorityRequest:
       type: object
       properties:
         priority:
           $ref: '#/components/schemas/TaskPriority'
-      required: [priority]
+      required: [ priority ]
     SyncLabelsRequest:
       type: object
       properties:
@@ -2010,14 +2014,14 @@ components:
           items:
             type: integer
             format: int64
-      required: [label_ids]
+      required: [ label_ids ]
     ReorderTaskRequest:
       type: object
       properties:
         position:
           type: integer
           minimum: 0
-      required: [position]
+      required: [ position ]
     Comment:
       type: object
       properties:
@@ -2046,7 +2050,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, task_id, user_id, body]
+      required: [ id, task_id, user_id, body ]
     CommentEnvelope:
       type: object
       properties:
@@ -2069,7 +2073,7 @@ components:
         body:
           type: string
           maxLength: 10000
-      required: [body]
+      required: [ body ]
     UpdateCommentRequest:
       type: object
       properties:
@@ -2103,7 +2107,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, task_id, original_name, mime, size, download_url]
+      required: [ id, task_id, original_name, mime, size, download_url ]
     AttachmentEnvelope:
       type: object
       properties:
@@ -2140,7 +2144,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, type]
+      required: [ id, type ]
     NotificationEnvelope:
       type: object
       properties:
@@ -2194,7 +2198,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, action]
+      required: [ id, action ]
     ActivityLogCollection:
       type: object
       properties:
@@ -2216,7 +2220,8 @@ components:
             type: integer
         upcoming:
           type: object
-          description: Upcoming tasks due within the next 7 days, wrapped in a data envelope.
+          description: Upcoming tasks due within the next 7 days, wrapped in a data
+            envelope.
           properties:
             data:
               type: array
