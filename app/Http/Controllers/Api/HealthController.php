@@ -9,6 +9,9 @@ class HealthController extends Controller
 {
     public function __invoke(): JsonResponse
     {
-        return response()->json(['status' => 'ok']);
+        return response()->json([
+            'status' => 'ok',
+            'timestamp' => now()->toIso8601String(),
+        ]);
     }
 }
