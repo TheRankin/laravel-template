@@ -11,8 +11,7 @@ class HealthController extends Controller
     {
         return response()->json([
             'status' => 'ok',
-            'version' => config('app.version', '1.0.0'),
-            'environment' => config('app.env'),
+            'timestamp' => now()->toIso8601String(),
             'php_version' => PHP_VERSION,
         ]);
     }
