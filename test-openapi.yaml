@@ -1,0 +1,238 @@
+openapi: 3.1.0
+info:
+  title: Notifications API
+  version: 1.0.0
+  description: |
+    HTTP API surface for in-app notifications. All endpoints require a bearer
+    token in the Authorization header.
+servers:
+  - url: /api
+    description: API base path
+tags:
+  - name: Notifications
+    description: Manage the authenticated user's in-app notifications.
+security:
+  - bearerToken: []
+paths:
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      operationId: listNotifications
+      summary: List the authenticated user's notifications
+      description: |
+        Returns a paginated list of notifications belonging to the authenticated
+        user, ordered newest first. Optionally filter to only unread notifications.
+      parameters:
+        - name: per_page
+          in: query
+          required: false
+          description: "Number of items per page. Clamped between 1 and 100."
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: unread
+          in: query
+          required: false
+          description: When truthy, only notifications that have not been read are returned.
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: A paginated collection of notifications.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationCollection"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+  /notifications/read-all:
+    post:
+      tags:
+        - Notifications
+      operationId: markAllNotificationsRead
+      summary: Mark all unread notifications as read
+      description: Marks every unread notification of the authenticated user as read.
+      responses:
+        "200":
+          description: The number of notifications that were updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: integer
+                    description: Count of notifications marked as read.
+                required:
+                  - updated
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+  /notifications/{notification}/read:
+    post:
+      tags:
+        - Notifications
+      operationId: markNotificationRead
+      summary: Mark a single notification as read
+      description: Marks the specified notification as read. The notification must belong to the authenticated user.
+      parameters:
+        - $ref: "#/components/parameters/NotificationId"
+      responses:
+        "200":
+          description: The updated notification.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /notifications/{notification}:
+    delete:
+      tags:
+        - Notifications
+      operationId: deleteNotification
+      summary: Delete a notification
+      description: Deletes the specified notification. The notification must belong to the authenticated user.
+      parameters:
+        - $ref: "#/components/parameters/NotificationId"
+      responses:
+        "204":
+          description: Notification deleted; no content returned.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  securitySchemes:
+    bearerToken:
+      type: http
+      scheme: bearer
+      description: "Send the API token as: Authorization: Bearer <token>"
+  parameters:
+    NotificationId:
+      name: notification
+      in: path
+      required: true
+      description: The notification identifier.
+      schema:
+        type: integer
+        format: int64
+  responses:
+    Unauthenticated:
+      description: Authentication token missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: Unauthenticated.
+    Forbidden:
+      description: The notification does not belong to the authenticated user.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: Forbidden.
+    NotFound:
+      description: Notification not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Notification:
+      type: object
+      description: An in-app notification belonging to a user.
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+          description: The notification type identifier (e.g. an event name).
+        data:
+          type: object
+          description: Arbitrary JSON payload describing the notification context.
+          additionalProperties: true
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp the notification was read, or null if unread.
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - type
+        - data
+        - read_at
+        - created_at
+    NotificationResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Notification"
+      required:
+        - data
+    NotificationCollection:
+      type: object
+      description: Paginated collection of notifications (Laravel resource collection format).
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        links:
+          type: object
+          properties:
+            first:
+              type: string
+              nullable: true
+            last:
+              type: string
+              nullable: true
+            prev:
+              type: string
+              nullable: true
+            next:
+              type: string
+              nullable: true
+        meta:
+          type: object
+          properties:
+            current_page:
+              type: integer
+            from:
+              type: integer
+              nullable: true
+            last_page:
+              type: integer
+            path:
+              type: string
+            per_page:
+              type: integer
+            to:
+              type: integer
+              nullable: true
+            total:
+              type: integer
+      required:
+        - data
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
