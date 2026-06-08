@@ -3,9 +3,9 @@ info:
   title: Users & Teams API
   version: 1.0.0
   description: >
-    OpenAPI specification covering the authentication, user, team and team-member
-    surface of the application. The API is token based: clients obtain a token via
-    register/login and present it on subsequent requests.
+    OpenAPI specification covering the authentication, user, team and
+    team-member surface of the application. The API is token based: clients
+    obtain a token via register/login and present it on subsequent requests.
 servers:
   - url: /api
     description: API root (routes registered under the api prefix)
@@ -23,7 +23,7 @@ security:
 paths:
   /auth/register:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Register a new user
       description: Creates a user account and returns the user together with an API token.
       security: []
@@ -44,9 +44,10 @@ paths:
           $ref: '#/components/responses/ValidationError'
   /auth/login:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Log in
-      description: Validates credentials and returns the user together with a fresh API token.
+      description: Validates credentials and returns the user together with a fresh
+        API token.
       security: []
       requestBody:
         required: true
@@ -65,7 +66,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
   /auth/logout:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Log out
       description: Revokes the current API token for the authenticated user.
       responses:
@@ -75,7 +76,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
   /auth/me:
     get:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Get the authenticated user
       responses:
         '200':
@@ -88,7 +89,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
   /auth/profile:
     patch:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Update the authenticated user profile
       requestBody:
         required: true
@@ -109,7 +110,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
   /auth/password:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Change the authenticated user password
       requestBody:
         required: true
@@ -126,9 +127,10 @@ paths:
           $ref: '#/components/responses/ValidationError'
   /users:
     get:
-      tags: [Users]
+      tags: [ Users ]
       summary: List users
-      description: Returns a paginated list of users. Supports a free-text query over name and email.
+      description: Returns a paginated list of users. Supports a free-text query over
+        name and email.
       parameters:
         - name: q
           in: query
@@ -158,7 +160,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/UserId'
     get:
-      tags: [Users]
+      tags: [ Users ]
       summary: Get a user
       responses:
         '200':
@@ -172,7 +174,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Users]
+      tags: [ Users ]
       summary: Update a user
       description: "Administrative operation: requires the admin role."
       requestBody:
@@ -197,7 +199,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Users]
+      tags: [ Users ]
       summary: Delete a user
       description: "Administrative operation: requires the admin role."
       responses:
@@ -211,7 +213,7 @@ paths:
           $ref: '#/components/responses/NotFound'
   /teams:
     get:
-      tags: [Teams]
+      tags: [ Teams ]
       summary: List teams
       description: Returns a paginated list of teams the authenticated user belongs to.
       parameters:
@@ -234,7 +236,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
-      tags: [Teams]
+      tags: [ Teams ]
       summary: Create a team
       requestBody:
         required: true
@@ -259,7 +261,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TeamId'
     get:
-      tags: [Teams]
+      tags: [ Teams ]
       summary: Get a team
       responses:
         '200':
@@ -275,7 +277,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Teams]
+      tags: [ Teams ]
       summary: Update a team
       requestBody:
         required: true
@@ -299,7 +301,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Teams]
+      tags: [ Teams ]
       summary: Delete a team
       responses:
         '204':
@@ -314,7 +316,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TeamId'
     get:
-      tags: [Team Members]
+      tags: [ Team Members ]
       summary: List team members
       responses:
         '200':
@@ -330,9 +332,10 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [Team Members]
+      tags: [ Team Members ]
       summary: Invite a member to a team
-      description: Invites or adds a user (identified by email) to the team with the given role.
+      description: Invites or adds a user (identified by email) to the team with the
+        given role.
       requestBody:
         required: true
         content:
@@ -359,7 +362,7 @@ paths:
       - $ref: '#/components/parameters/TeamId'
       - $ref: '#/components/parameters/UserId'
     patch:
-      tags: [Team Members]
+      tags: [ Team Members ]
       summary: Update a team member role
       requestBody:
         required: true
@@ -383,7 +386,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Team Members]
+      tags: [ Team Members ]
       summary: Remove a member from a team
       responses:
         '204':
@@ -394,6 +397,22 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: >
+        Public health-check endpoint. Returns service status, current timestamp,
+        the Laravel framework version, and the default database connection name.
+      security: []
+      responses:
+        "200":
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -497,7 +516,8 @@ components:
           type: integer
     User:
       type: object
-      description: A user. The email field is only present when the requester is the user themselves or an admin.
+      description: A user. The email field is only present when the requester is the
+        user themselves or an admin.
       properties:
         id:
           type: integer
@@ -510,7 +530,7 @@ components:
           description: Only included when the authenticated user may see this address.
         role:
           type: string
-          enum: [admin, member]
+          enum: [ admin, member ]
         avatar_url:
           type: string
           nullable: true
@@ -521,7 +541,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, name, role]
+      required: [ id, name, role ]
     UserEnvelope:
       type: object
       properties:
@@ -571,7 +591,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, name, slug]
+      required: [ id, name, slug ]
     TeamEnvelope:
       type: object
       properties:
@@ -605,7 +625,7 @@ components:
           nullable: true
         role:
           type: string
-          enum: [owner, admin, member]
+          enum: [ owner, admin, member ]
           nullable: true
         user:
           $ref: '#/components/schemas/User'
@@ -631,14 +651,15 @@ components:
             $ref: '#/components/schemas/TeamMember'
     AuthResponse:
       type: object
-      description: Returned by register and login. Note the user is NOT wrapped in a data envelope here.
+      description: Returned by register and login. Note the user is NOT wrapped in a
+        data envelope here.
       properties:
         user:
           $ref: '#/components/schemas/User'
         token:
           type: string
           description: API token to be presented as a bearer token on subsequent requests.
-      required: [user, token]
+      required: [ user, token ]
     RegisterRequest:
       type: object
       properties:
@@ -654,7 +675,7 @@ components:
           type: string
           minLength: 8
           maxLength: 255
-      required: [name, email, password]
+      required: [ name, email, password ]
     LoginRequest:
       type: object
       properties:
@@ -664,10 +685,11 @@ components:
           maxLength: 255
         password:
           type: string
-      required: [email, password]
+      required: [ email, password ]
     UpdateProfileRequest:
       type: object
-      description: All fields optional; when present they must satisfy the listed constraints.
+      description: All fields optional; when present they must satisfy the listed
+        constraints.
       properties:
         name:
           type: string
@@ -689,10 +711,11 @@ components:
           minLength: 8
           maxLength: 255
           description: Must differ from the current password.
-      required: [current_password, new_password]
+      required: [ current_password, new_password ]
     UpdateUserRequest:
       type: object
-      description: All fields optional; when present they must satisfy the listed constraints.
+      description: All fields optional; when present they must satisfy the listed
+        constraints.
       properties:
         name:
           type: string
@@ -704,7 +727,7 @@ components:
           description: Must be unique among users (ignoring the current user).
         role:
           type: string
-          enum: [admin, member]
+          enum: [ admin, member ]
         avatar_url:
           type: string
           maxLength: 2048
@@ -726,10 +749,11 @@ components:
         description:
           type: string
           nullable: true
-      required: [name, slug]
+      required: [ name, slug ]
     UpdateTeamRequest:
       type: object
-      description: All fields optional; when present they must satisfy the listed constraints.
+      description: All fields optional; when present they must satisfy the listed
+        constraints.
       properties:
         name:
           type: string
@@ -738,7 +762,8 @@ components:
           type: string
           maxLength: 255
           pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
-          description: Lowercase, hyphen-separated; must be unique (ignoring the current team).
+          description: Lowercase, hyphen-separated; must be unique (ignoring the current
+            team).
         description:
           type: string
           nullable: true
@@ -751,12 +776,33 @@ components:
           maxLength: 255
         role:
           type: string
-          enum: [owner, admin, member]
-      required: [email, role]
+          enum: [ owner, admin, member ]
+      required: [ email, role ]
     UpdateTeamMemberRequest:
       type: object
       properties:
         role:
           type: string
-          enum: [owner, admin, member]
-      required: [role]
+          enum: [ owner, admin, member ]
+      required: [ role ]
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+          description: Current server time in ISO 8601 format.
+        laravel_version:
+          type: string
+          description: The running Laravel framework version.
+        database:
+          type: string
+          description: The name of the default database connection.
+      required:
+        - status
+        - timestamp
+        - laravel_version
+        - database
