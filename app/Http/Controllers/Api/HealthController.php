@@ -12,8 +12,8 @@ class HealthController extends Controller
         return response()->json([
             'status' => 'ok',
             'timestamp' => now()->toIso8601String(),
-            'laravel_version' => app()->version(),
-            'database' => config('database.default'),
+            'app_environment' => app()->environment(),
+            'app_debug' => config('app.debug'),
         ]);
     }
 }
