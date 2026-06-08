@@ -1,0 +1,449 @@
+openapi: 3.1.0
+info:
+  title: Users API
+  version: 1.0.0
+  description: |
+    User accounts and authentication endpoints for the task management
+    application. This document is scoped to user-related functionality
+    (registration, login, profile, and user administration) and intentionally
+    excludes teams, projects, tasks, and other surfaces.
+servers:
+  - url: /api
+    description: API root
+tags:
+  - name: Auth
+    description: Authentication and current-user profile management.
+  - name: Users
+    description: User directory and administration.
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Creates a new user account and returns the user together with a freshly issued API token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      description: Authenticates a user with email and password and returns a new API token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out
+      description: Revokes the current API token for the authenticated user.
+      responses:
+        '204':
+          description: Logged out; no content.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get the current user
+      description: Returns the authenticated user's profile.
+      responses:
+        '200':
+          description: The authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/profile:
+    patch:
+      tags: [Auth]
+      summary: Update the current user's profile
+      description: Updates editable profile fields of the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Updated user profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/password:
+    post:
+      tags: [Auth]
+      summary: Change the current user's password
+      description: Changes the authenticated user's password after verifying the current password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '204':
+          description: Password changed; no content.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /users:
+    get:
+      tags: [Users]
+      summary: List users
+      description: Returns a paginated list of users, optionally filtered by a search term matching name or email.
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Search term matched against user name or email.
+          schema:
+            type: string
+        - name: per_page
+          in: query
+          required: false
+          description: Number of users per page (clamped between 1 and 100).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Paginated collection of users.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCollection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/{user}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [Users]
+      summary: Get a user
+      description: Returns a single user by ID.
+      responses:
+        '200':
+          description: The requested user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Users]
+      summary: Update a user
+      description: Updates a user. Requires the authenticated caller to have the admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Updated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Users]
+      summary: Delete a user
+      description: Deletes a user. Requires the authenticated caller to have the admin role.
+      responses:
+        '204':
+          description: User deleted; no content.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerToken:
+      type: http
+      scheme: bearer
+      description: "API token issued at registration/login. Send it as an Authorization header: Bearer <token>."
+  parameters:
+    UserId:
+      name: user
+      in: path
+      required: true
+      description: The user's unique identifier.
+      schema:
+        type: integer
+        format: int64
+  schemas:
+    User:
+      type: object
+      description: A user account. The email field is only present when the authenticated caller is the user themselves or an admin.
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+          description: Only included for the user themselves or admin callers.
+        role:
+          type: string
+          enum: [admin, member]
+        avatar_url:
+          type:
+            - string
+            - "null"
+        timezone:
+          type: string
+        created_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+      required:
+        - id
+        - name
+        - role
+        - timezone
+    UserResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+      required: [data]
+    UserCollection:
+      type: object
+      description: Paginated collection of users following Laravel's resource pagination envelope.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        links:
+          type: object
+          properties:
+            first:
+              type:
+                - string
+                - "null"
+            last:
+              type:
+                - string
+                - "null"
+            prev:
+              type:
+                - string
+                - "null"
+            next:
+              type:
+                - string
+                - "null"
+        meta:
+          type: object
+          properties:
+            current_page:
+              type: integer
+            from:
+              type:
+                - integer
+                - "null"
+            last_page:
+              type: integer
+            path:
+              type: string
+            per_page:
+              type: integer
+            to:
+              type:
+                - integer
+                - "null"
+            total:
+              type: integer
+      required: [data]
+    AuthResponse:
+      type: object
+      description: User profile plus a newly issued API token.
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: API token to be sent as a bearer token on subsequent requests.
+      required: [user, token]
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Must be unique across users.
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 255
+      required: [name, email, password]
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          format: password
+      required: [email, password]
+    UpdateProfileRequest:
+      type: object
+      description: All fields are optional; only provided fields are updated.
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        avatar_url:
+          type:
+            - string
+            - "null"
+          maxLength: 2048
+        timezone:
+          type: string
+          maxLength: 64
+    ChangePasswordRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          format: password
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 255
+          description: Must differ from the current password.
+      required: [current_password, new_password]
+    UpdateUserRequest:
+      type: object
+      description: All fields are optional; only provided fields are updated. Admin only.
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Must be unique across users (ignoring the user being updated).
+        role:
+          type: string
+          enum: [admin, member]
+        avatar_url:
+          type:
+            - string
+            - "null"
+          maxLength: 2048
+        timezone:
+          type: string
+          maxLength: 64
+    ValidationErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required: [message]
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+  responses:
+    Unauthorized:
+      description: Authentication is required or the token is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: Unauthenticated.
+    Forbidden:
+      description: The authenticated user lacks permission for this action.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: The submitted data failed validation.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+security:
+  - bearerToken: []
