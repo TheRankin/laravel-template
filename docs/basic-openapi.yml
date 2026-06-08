@@ -1,0 +1,728 @@
+openapi: 3.1.0
+info:
+  title: Users & Teams API
+  version: 1.0.0
+  description: |
+    OpenAPI specification covering the authentication, user, team, and
+    team-membership surface of the application. Scoped to user- and
+    team-related logic only.
+servers:
+  - url: /api
+    description: API base path
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+    description: Registration, login, session, and profile management.
+  - name: Users
+    description: User listing and administration.
+  - name: Teams
+    description: Team CRUD operations.
+  - name: Team Members
+    description: Managing membership within a team.
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Creates a new user account and returns an API token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created and authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      description: Authenticates by email and password and returns an API token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out
+      description: Revokes the current API token.
+      responses:
+        '204':
+          description: Logged out, no content.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get the authenticated user
+      responses:
+        '200':
+          description: The current user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/profile:
+    patch:
+      tags: [Auth]
+      summary: Update own profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Updated profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/password:
+    post:
+      tags: [Auth]
+      summary: Change password
+      description: Changes the authenticated user's password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '204':
+          description: Password changed, no content.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /users:
+    get:
+      tags: [Users]
+      summary: List users
+      description: Returns a paginated list of users, optionally filtered by a search term.
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: q
+          in: query
+          required: false
+          description: Search term matched against name or email.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of users.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCollection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/{user}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [Users]
+      summary: Get a user
+      responses:
+        '200':
+          description: The requested user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Users]
+      summary: Update a user
+      description: Admin-only. Updates a user's attributes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Updated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Users]
+      summary: Delete a user
+      description: Admin-only. Deletes a user.
+      responses:
+        '204':
+          description: Deleted, no content.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /teams:
+    get:
+      tags: [Teams]
+      summary: List teams
+      description: Returns a paginated list of the authenticated user's teams.
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Paginated list of teams.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamCollection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Teams]
+      summary: Create a team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreTeamRequest'
+      responses:
+        '201':
+          description: Team created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /teams/{team}:
+    parameters:
+      - $ref: '#/components/parameters/TeamId'
+    get:
+      tags: [Teams]
+      summary: Get a team
+      responses:
+        '200':
+          description: The requested team.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Teams]
+      summary: Update a team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTeamRequest'
+      responses:
+        '200':
+          description: Updated team.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Teams]
+      summary: Delete a team
+      responses:
+        '204':
+          description: Deleted, no content.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /teams/{team}/members:
+    parameters:
+      - $ref: '#/components/parameters/TeamId'
+    get:
+      tags: [Team Members]
+      summary: List team members
+      responses:
+        '200':
+          description: List of team members.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamMemberCollection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Team Members]
+      summary: Invite a member
+      description: Invites a user (by email) into the team with a role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteMemberRequest'
+      responses:
+        '201':
+          description: Member added.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamMemberEnvelope'
+        '200':
+          description: Member added (existing user).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamMemberEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /teams/{team}/members/{user}:
+    parameters:
+      - $ref: '#/components/parameters/TeamId'
+      - $ref: '#/components/parameters/UserId'
+    patch:
+      tags: [Team Members]
+      summary: Update a member's role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberRequest'
+      responses:
+        '200':
+          description: Member updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamMemberEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Team Members]
+      summary: Remove a member
+      responses:
+        '204':
+          description: Member removed, no content.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: "Send the API token as Authorization: Bearer <token>."
+  parameters:
+    PerPage:
+      name: per_page
+      in: query
+      required: false
+      description: Items per page (clamped between 1 and 100, default 20).
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    UserId:
+      name: user
+      in: path
+      required: true
+      description: The user identifier.
+      schema:
+        type: integer
+    TeamId:
+      name: team
+      in: path
+      required: true
+      description: The team identifier.
+      schema:
+        type: integer
+  responses:
+    Unauthorized:
+      description: Missing or invalid authentication token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessageError'
+    Forbidden:
+      description: The authenticated user is not allowed to perform this action.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessageError'
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessageError'
+    ValidationError:
+      description: Validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+          description: Only present when the requester is the user themselves or an admin.
+        role:
+          type: string
+          enum: [admin, member]
+        avatar_url:
+          type: [string, 'null']
+        timezone:
+          type: [string, 'null']
+        created_at:
+          type: [string, 'null']
+          format: date-time
+      required: [id, name, role]
+    Team:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: [string, 'null']
+        owner_id:
+          type: [integer, 'null']
+        owner:
+          $ref: '#/components/schemas/User'
+        members_count:
+          type: integer
+        projects_count:
+          type: integer
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+      required: [id, name, slug]
+    TeamMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        team_id:
+          type: [integer, 'null']
+        user_id:
+          type: [integer, 'null']
+        role:
+          type: [string, 'null']
+          enum: [owner, admin, member, null]
+        user:
+          $ref: '#/components/schemas/User'
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+      required: [id]
+    PaginationLinks:
+      type: object
+      properties:
+        first:
+          type: [string, 'null']
+        last:
+          type: [string, 'null']
+        prev:
+          type: [string, 'null']
+        next:
+          type: [string, 'null']
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        from:
+          type: [integer, 'null']
+        last_page:
+          type: integer
+        path:
+          type: string
+        per_page:
+          type: integer
+        to:
+          type: [integer, 'null']
+        total:
+          type: integer
+    UserEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+      required: [data]
+    TeamEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Team'
+      required: [data]
+    TeamMemberEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TeamMember'
+      required: [data]
+    UserCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+      required: [data]
+    TeamCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+      required: [data]
+    TeamMemberCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMember'
+      required: [data]
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: API token to be used as a Bearer token.
+      required: [user, token]
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 8
+          maxLength: 255
+      required: [name, email, password]
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+      required: [email, password]
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        avatar_url:
+          type: [string, 'null']
+          maxLength: 2048
+        timezone:
+          type: string
+          maxLength: 64
+    ChangePasswordRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+        new_password:
+          type: string
+          minLength: 8
+          maxLength: 255
+          description: Must be different from the current password.
+      required: [current_password, new_password]
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        role:
+          type: string
+          enum: [admin, member]
+        avatar_url:
+          type: [string, 'null']
+          maxLength: 2048
+        timezone:
+          type: string
+          maxLength: 64
+    StoreTeamRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+        description:
+          type: [string, 'null']
+      required: [name, slug]
+    UpdateTeamRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+        description:
+          type: [string, 'null']
+    InviteMemberRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        role:
+          type: string
+          enum: [owner, admin, member]
+      required: [email, role]
+    UpdateMemberRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [owner, admin, member]
+      required: [role]
+    MessageError:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required: [message]
