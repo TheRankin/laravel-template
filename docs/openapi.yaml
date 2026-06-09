@@ -1987,13 +1987,13 @@ components:
         timestamp:
           type: string
           format: date-time
-        server_time:
+        app_version:
           type: string
-        uptime:
+          nullable: true
+          description: The configured application version.
+        php_version:
           type: string
-          description: Human-readable process uptime, e.g. "1.5 minutes".
-        environment:
-          type: string
+          description: The PHP runtime version.
     Project:
       type: object
       properties:
