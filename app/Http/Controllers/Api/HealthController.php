@@ -12,9 +12,8 @@ class HealthController extends Controller
         return response()->json([
             'status' => 'ok',
             'timestamp' => now()->toIso8601String(),
-            'server_time' => now()->toDateTimeString(),
-            'uptime' => round((microtime(true) - LARAVEL_START) / 60, 2) . ' minutes',
-            'environment' => app()->environment(),
+            'app_version' => config('app.version'),
+            'php_version' => phpversion(),
         ]);
     }
 }
