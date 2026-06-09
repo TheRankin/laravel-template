@@ -1,57 +1,45 @@
 openapi: 3.1.0
 info:
-  title: Users & Teams API
+  title: Task Manager API - Users & Teams
   version: 1.0.0
-  description: |
-    HTTP API surface covering user management and team management
-    (including team membership) for the application. All endpoints
-    require token-based authentication unless otherwise noted.
+  description: >-
+    OpenAPI specification covering the Users and Teams surface of the API,
+    including team membership management. All endpoints (except registration
+    and login, which are out of scope here) require bearer token authentication.
 servers:
   - url: /api
-    description: API root
+    description: API base path
 security:
   - bearerAuth: []
 tags:
   - name: Users
     description: User listing and management.
   - name: Teams
-    description: Team creation and management.
+    description: Team listing and management.
   - name: Team Members
-    description: Management of membership within a team.
+    description: Management of members within a team.
 paths:
   /users:
     get:
-      tags: [Users]
+      tags:
+        - Users
       summary: List users
-      description: Returns a paginated list of users. Supports a free-text search filter.
+      description: >-
+        Returns a paginated list of users. Supports a free-text search across
+        name and email. Email is only included when the authenticated user is
+        the user in question or has the admin role.
       operationId: listUsers
       parameters:
+        - $ref: '#/components/parameters/PerPage'
         - name: q
           in: query
           required: false
-          description: Free-text filter matched against user name and email.
+          description: Free-text search matched against user name and email.
           schema:
             type: string
-        - name: per_page
-          in: query
-          required: false
-          description: Items per page (clamped between 1 and 100).
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: page
-          in: query
-          required: false
-          description: Page number to retrieve.
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
       responses:
         '200':
-          description: A paginated collection of users.
+          description: Paginated collection of users.
           content:
             application/json:
               schema:
@@ -62,9 +50,9 @@ paths:
     parameters:
       - $ref: '#/components/parameters/UserId'
     get:
-      tags: [Users]
+      tags:
+        - Users
       summary: Get a user
-      description: Retrieve a single user by ID.
       operationId: getUser
       responses:
         '200':
@@ -78,9 +66,10 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Users]
+      tags:
+        - Users
       summary: Update a user
-      description: Update a user. Requires the authenticated user to have the admin role.
+      description: Update a user. Requires the admin role.
       operationId: updateUser
       requestBody:
         required: true
@@ -104,13 +93,14 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Users]
+      tags:
+        - Users
       summary: Delete a user
-      description: Delete a user. Requires the authenticated user to have the admin role.
+      description: Delete a user. Requires the admin role.
       operationId: deleteUser
       responses:
         '204':
-          description: User deleted successfully.
+          description: User deleted.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -119,31 +109,18 @@ paths:
           $ref: '#/components/responses/NotFound'
   /teams:
     get:
-      tags: [Teams]
+      tags:
+        - Teams
       summary: List teams
-      description: Returns a paginated list of teams the authenticated user belongs to.
+      description: >-
+        Returns a paginated list of teams that the authenticated user belongs
+        to. Each team includes member and project counts.
       operationId: listTeams
       parameters:
-        - name: per_page
-          in: query
-          required: false
-          description: Items per page (clamped between 1 and 100).
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: page
-          in: query
-          required: false
-          description: Page number to retrieve.
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
+        - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
-          description: A paginated collection of teams.
+          description: Paginated collection of teams.
           content:
             application/json:
               schema:
@@ -151,9 +128,9 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
-      tags: [Teams]
+      tags:
+        - Teams
       summary: Create a team
-      description: Create a new team owned by the authenticated user.
       operationId: createTeam
       requestBody:
         required: true
@@ -178,9 +155,9 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TeamId'
     get:
-      tags: [Teams]
+      tags:
+        - Teams
       summary: Get a team
-      description: Retrieve a single team, including its members.
       operationId: getTeam
       responses:
         '200':
@@ -196,9 +173,9 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Teams]
+      tags:
+        - Teams
       summary: Update a team
-      description: Update a team. Requires authorization on the team.
       operationId: updateTeam
       requestBody:
         required: true
@@ -222,13 +199,13 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Teams]
+      tags:
+        - Teams
       summary: Delete a team
-      description: Delete a team. Requires authorization on the team.
       operationId: deleteTeam
       responses:
         '204':
-          description: Team deleted successfully.
+          description: Team deleted.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -239,17 +216,22 @@ paths:
     parameters:
       - $ref: '#/components/parameters/TeamId'
     get:
-      tags: [Team Members]
+      tags:
+        - Team Members
       summary: List team members
-      description: List all members of a team.
       operationId: listTeamMembers
       responses:
         '200':
-          description: The list of team members.
+          description: Collection of team members.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TeamMemberCollection'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeamMember'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -257,9 +239,12 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [Team Members]
+      tags:
+        - Team Members
       summary: Invite a team member
-      description: Invite a member to the team by email and assign a role.
+      description: >-
+        Invite a user to the team by email and assign them a role. Requires
+        permission to manage members on the team.
       operationId: inviteTeamMember
       requestBody:
         required: true
@@ -269,7 +254,7 @@ paths:
               $ref: '#/components/schemas/InviteMemberRequest'
       responses:
         '201':
-          description: The newly added team member.
+          description: The created or updated team member.
           content:
             application/json:
               schema:
@@ -287,9 +272,9 @@ paths:
       - $ref: '#/components/parameters/TeamId'
       - $ref: '#/components/parameters/UserId'
     patch:
-      tags: [Team Members]
+      tags:
+        - Team Members
       summary: Update a team member role
-      description: Update the role of a member within the team.
       operationId: updateTeamMember
       requestBody:
         required: true
@@ -313,13 +298,13 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [Team Members]
+      tags:
+        - Team Members
       summary: Remove a team member
-      description: Remove a member from the team.
       operationId: removeTeamMember
       responses:
         '204':
-          description: Team member removed successfully.
+          description: Member removed from the team.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -331,8 +316,18 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      description: "Send the API token as Authorization: Bearer <token>."
+      description: "Send the API token as: Authorization: Bearer <token>"
   parameters:
+    PerPage:
+      name: per_page
+      in: query
+      required: false
+      description: Number of items per page (clamped between 1 and 100, default 20).
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
     UserId:
       name: user
       in: path
@@ -353,46 +348,222 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/MessageResponse'
+            $ref: '#/components/schemas/MessageError'
           example:
             message: Unauthenticated.
     Forbidden:
-      description: The authenticated user is not permitted to perform this action.
+      description: The authenticated user is not authorized for this action.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/MessageResponse'
-          example:
-            message: Forbidden.
+            $ref: '#/components/schemas/MessageError'
     NotFound:
       description: The requested resource was not found.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/MessageResponse'
+            $ref: '#/components/schemas/MessageError'
     ValidationError:
-      description: The submitted data failed validation.
+      description: The request payload failed validation.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ValidationErrorResponse'
+            $ref: '#/components/schemas/ValidationError'
   schemas:
-    MessageResponse:
+    User:
       type: object
       properties:
-        message:
+        id:
+          type: integer
+        name:
           type: string
-    ValidationErrorResponse:
+        email:
+          type: string
+          format: email
+          description: >-
+            Only present when the authenticated user is this user or has the
+            admin role.
+        role:
+          type: string
+          enum:
+            - admin
+            - member
+        avatar_url:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - name
+        - role
+    Team:
       type: object
       properties:
-        message:
+        id:
+          type: integer
+        name:
           type: string
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        owner_id:
+          type: integer
+        owner:
+          $ref: '#/components/schemas/User'
+        members_count:
+          type: integer
+          description: Present when the members relationship count is loaded.
+        projects_count:
+          type: integer
+          description: Present when the projects relationship count is loaded.
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - name
+        - slug
+        - owner_id
+    TeamMember:
+      type: object
+      description: >-
+        A member of a team. Can represent either a user with pivot data or a
+        team member record directly.
+      properties:
+        id:
+          type: integer
+        team_id:
+          type: integer
+          nullable: true
+        user_id:
+          type: integer
+          nullable: true
+        role:
+          type: string
+          enum:
+            - owner
+            - admin
+            - member
+          nullable: true
+        user:
+          $ref: '#/components/schemas/User'
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+    UpdateUserRequest:
+      type: object
+      description: All fields are optional; supplied fields are validated.
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        role:
+          type: string
+          enum:
+            - admin
+            - member
+        avatar_url:
+          type: string
+          maxLength: 2048
+          nullable: true
+        timezone:
+          type: string
+          maxLength: 64
+    StoreTeamRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 255
+          description: Lowercase alphanumeric segments separated by hyphens.
+          pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+        description:
+          type: string
+          nullable: true
+      required:
+        - name
+        - slug
+    UpdateTeamRequest:
+      type: object
+      description: All fields are optional; supplied fields are validated.
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 255
+          description: Lowercase alphanumeric segments separated by hyphens.
+          pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+        description:
+          type: string
+          nullable: true
+    InviteMemberRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        role:
+          type: string
+          enum:
+            - owner
+            - admin
+            - member
+      required:
+        - email
+        - role
+    UpdateMemberRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - owner
+            - admin
+            - member
+      required:
+        - role
+    UserEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+    TeamEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Team'
+    TeamMemberEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TeamMember'
     PaginationLinks:
       type: object
       properties:
@@ -427,38 +598,6 @@ components:
           nullable: true
         total:
           type: integer
-    User:
-      type: object
-      description: A user. The email field is only present when the requester may view it (self or admin).
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        email:
-          type: string
-          format: email
-          description: Present only for the user themselves or for admins.
-        role:
-          type: string
-          enum: [admin, member]
-        avatar_url:
-          type: string
-          nullable: true
-        timezone:
-          type: string
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-          nullable: true
-      required: [id, name, role]
-    UserEnvelope:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/User'
-      required: [data]
     UserCollection:
       type: object
       properties:
@@ -470,66 +609,6 @@ components:
           $ref: '#/components/schemas/PaginationLinks'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
-      required: [data]
-    UpdateUserRequest:
-      type: object
-      description: All fields are optional; provided fields are validated.
-      properties:
-        name:
-          type: string
-          maxLength: 255
-        email:
-          type: string
-          format: email
-          maxLength: 255
-          description: Must be unique across users.
-        role:
-          type: string
-          enum: [admin, member]
-        avatar_url:
-          type: string
-          maxLength: 2048
-          nullable: true
-        timezone:
-          type: string
-          maxLength: 64
-    Team:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        slug:
-          type: string
-        description:
-          type: string
-          nullable: true
-        owner_id:
-          type: integer
-        owner:
-          $ref: '#/components/schemas/User'
-        members_count:
-          type: integer
-          description: Present when the members relationship count is loaded.
-        projects_count:
-          type: integer
-          description: Present when the projects relationship count is loaded.
-        created_at:
-          type: string
-          format: date-time
-          nullable: true
-        updated_at:
-          type: string
-          format: date-time
-          nullable: true
-      required: [id, name, slug, owner_id]
-    TeamEnvelope:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/Team'
-      required: [data]
     TeamCollection:
       type: object
       properties:
@@ -541,92 +620,19 @@ components:
           $ref: '#/components/schemas/PaginationLinks'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
-      required: [data]
-    StoreTeamRequest:
+    MessageError:
       type: object
       properties:
-        name:
+        message:
           type: string
-          maxLength: 255
-        slug:
-          type: string
-          maxLength: 255
-          description: "Lowercase alphanumeric words separated by hyphens; must be unique."
-          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
-        description:
-          type: string
-          nullable: true
-      required: [name, slug]
-    UpdateTeamRequest:
-      type: object
-      description: All fields are optional; provided fields are validated.
-      properties:
-        name:
-          type: string
-          maxLength: 255
-        slug:
-          type: string
-          maxLength: 255
-          description: "Lowercase alphanumeric words separated by hyphens; must be unique."
-          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
-        description:
-          type: string
-          nullable: true
-    TeamMember:
+    ValidationError:
       type: object
       properties:
-        id:
-          type: integer
-        team_id:
-          type: integer
-          nullable: true
-        user_id:
-          type: integer
-          nullable: true
-        role:
+        message:
           type: string
-          enum: [owner, admin, member]
-          nullable: true
-        user:
-          $ref: '#/components/schemas/User'
-        created_at:
-          type: string
-          format: date-time
-          nullable: true
-        updated_at:
-          type: string
-          format: date-time
-          nullable: true
-      required: [id]
-    TeamMemberEnvelope:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/TeamMember'
-      required: [data]
-    TeamMemberCollection:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/TeamMember'
-      required: [data]
-    InviteMemberRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-          maxLength: 255
-        role:
-          type: string
-          enum: [owner, admin, member]
-      required: [email, role]
-    UpdateMemberRequest:
-      type: object
-      properties:
-        role:
-          type: string
-          enum: [owner, admin, member]
-      required: [role]
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
