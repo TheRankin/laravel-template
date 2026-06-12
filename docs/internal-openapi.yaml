@@ -47,7 +47,8 @@ paths:
       summary: Health check
       description: |
         Returns the service status along with runtime metadata (timestamp,
-        application version and PHP version). No authentication required.
+        application version, PHP version, environment name and debug flag).
+        No authentication required.
       security: []
       responses:
         "200":
@@ -66,19 +67,29 @@ paths:
                     description: ISO 8601 timestamp of when the probe was served.
                   app_version:
                     type: string
-                    description: Application version (from app.version config). May be null when
-                      unset.
-                    nullable: true
+                    description: Application version (from app.version config). Defaults to the
+                      string "unknown" when unset.
                     example: 1.0.0
                   php_version:
                     type: string
                     description: The PHP runtime version.
                     example: 8.3.0
+                  environment:
+                    type: string
+                    description: The application environment name (e.g. production, local, testing).
+                    example: production
+                  debug:
+                    type: boolean
+                    description: Whether application debug mode is enabled (from app.debug config).
+                      May be null when the config value is unset.
+                    nullable: true
                 required:
                   - status
                   - timestamp
                   - app_version
                   - php_version
+                  - environment
+                  - debug
   /auth/register:
     post:
       tags: [ Auth ]
