@@ -46,8 +46,9 @@ paths:
         - Health
       summary: Health check
       description: |
-        Returns the service status along with runtime metadata (ISO 8601
-        timestamp, server time and process uptime). No authentication required.
+        Returns the service status along with runtime metadata (timestamp,
+        application version, PHP version, environment name and debug flag).
+        No authentication required.
       security: []
       responses:
         "200":
@@ -64,20 +65,31 @@ paths:
                     type: string
                     format: date-time
                     description: ISO 8601 timestamp of when the probe was served.
-                  server_time:
+                  app_version:
                     type: string
-                    description: Server local date-time in Y-m-d H:i:s format.
-                    example: 2024-01-01 12:00:00
-                  uptime:
+                    description: Application version (from app.version config). Defaults to the
+                      string "unknown" when unset.
+                    example: 1.0.0
+                  php_version:
                     type: string
-                    description: Process uptime since application start, formatted as a number of
-                      minutes.
-                    example: 12.34 minutes
+                    description: The PHP runtime version.
+                    example: 8.3.0
+                  environment:
+                    type: string
+                    description: The application environment name (e.g. production, local, testing).
+                    example: production
+                  debug:
+                    type: boolean
+                    description: Whether application debug mode is enabled (from app.debug config).
+                      May be null when the config value is unset.
+                    nullable: true
                 required:
                   - status
                   - timestamp
-                  - server_time
-                  - uptime
+                  - app_version
+                  - php_version
+                  - environment
+                  - debug
   /auth/register:
     post:
       tags: [ Auth ]
