@@ -1980,7 +1980,6 @@ components:
       required: [ role ]
     HealthResponse:
       type: object
-      description: Public health probe payload reporting status and basic runtime info.
       properties:
         status:
           type: string
@@ -1988,16 +1987,26 @@ components:
         timestamp:
           type: string
           format: date-time
-          description: Current server time in ISO 8601 format.
-        server_time:
+        app_version:
           type: string
-          description: Current server time as a date-time string.
-        uptime:
+          nullable: true
+          description: The configured application version (defaults to "unknown").
+        php_version:
           type: string
-          description: Approximate process uptime, e.g. "12.34 minutes".
+          description: The PHP runtime version.
+        environment:
+          type: string
+          description: The current application environment (e.g. production, local).
+        debug:
+          type: boolean
+          nullable: true
+          description: Whether the application is running in debug mode.
       required:
         - status
         - timestamp
+        - app_version
+        - php_version
+        - environment
     Project:
       type: object
       properties:
