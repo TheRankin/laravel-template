@@ -1990,10 +1990,23 @@ components:
         app_version:
           type: string
           nullable: true
-          description: The configured application version.
+          description: The configured application version (defaults to "unknown").
         php_version:
           type: string
           description: The PHP runtime version.
+        environment:
+          type: string
+          description: The current application environment (e.g. production, local).
+        debug:
+          type: boolean
+          nullable: true
+          description: Whether the application is running in debug mode.
+      required:
+        - status
+        - timestamp
+        - app_version
+        - php_version
+        - environment
     Project:
       type: object
       properties:
