@@ -14,10 +14,6 @@ class HealthController extends Controller
             'timestamp' => now()->toIso8601String(),
             'server_time' => now()->toDateTimeString(),
             'uptime' => round((microtime(true) - LARAVEL_START) / 60, 2) . ' minutes',
-            'environment' => app()->environment(),
-            'debug' => config('app.debug'),
-            'database' => config('database.default'),
-            'cache' => config('cache.default'),
         ]);
     }
 }
