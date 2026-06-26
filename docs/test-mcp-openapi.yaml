@@ -3,114 +3,101 @@ info:
   title: Task Management API
   version: 1.0.0
   description: >-
-    HTTP API for a team-based task management application built with Laravel.
-    Provides authentication, teams, projects, project members, labels, tasks,
-    subtasks, comments, attachments, activity logs, notifications, dashboard,
-    and search. All endpoints are served under the `/api` prefix.
+    HTTP API for a team-based project and task management application built
+    with Laravel. Supports teams, projects, tasks (with subtasks, labels,
+    comments, attachments), activity logs, notifications, search and a personal
+    dashboard. Authentication uses a bearer API token issued at register/login.
 servers:
   - url: /api
-    description: Default API base path
-security:
-  - bearerAuth: []
+    description: API base path
 tags:
   - name: Auth
-    description: Registration, login, profile, and session management.
+    description: Authentication and profile management
   - name: Users
-    description: User listing and administration.
+    description: User directory and administration
   - name: Teams
-    description: Team management.
+    description: Team management
   - name: Team Members
-    description: Membership management for teams.
+    description: Team membership management
   - name: Projects
-    description: Project management nested under teams.
+    description: Project management
   - name: Project Members
-    description: Membership management for projects.
+    description: Project membership management
   - name: Labels
-    description: Project labels.
+    description: Project label management
   - name: Tasks
-    description: Tasks and subtasks within projects.
+    description: Task and subtask management
   - name: Comments
-    description: Task comments.
+    description: Task comments
   - name: Attachments
-    description: Task file attachments.
-  - name: Activity
-    description: Activity logs.
+    description: Task file attachments
   - name: Notifications
-    description: User notifications.
+    description: User notifications
+  - name: Activity
+    description: Activity log feeds
   - name: Dashboard
-    description: Personal dashboard summary.
+    description: Personal dashboard
   - name: Search
-    description: Cross-resource search.
-  - name: Health
-    description: Service health.
+    description: Global search
+  - name: System
+    description: Service health
+security:
+  - bearerAuth: []
 paths:
   /health:
     get:
-      tags: [Health]
+      tags: [System]
       summary: Service health check
-      description: Public endpoint returning service status and version metadata.
+      description: Public endpoint returning service status and environment metadata.
       security: []
       responses:
         '200':
-          description: Service is healthy.
+          description: Service status
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
-
   /auth/register:
     post:
       tags: [Auth]
       summary: Register a new user
       security: []
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterRequest'
+        $ref: '#/components/requestBodies/Register'
       responses:
         '201':
-          description: User registered; returns the user and an API token.
+          description: User created and authenticated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /auth/login:
     post:
       tags: [Auth]
-      summary: Log in and obtain an API token
+      summary: Authenticate and obtain an API token
       security: []
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
+        $ref: '#/components/requestBodies/Login'
       responses:
         '200':
-          description: Authenticated; returns the user and an API token.
+          description: Authenticated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /auth/logout:
     post:
       tags: [Auth]
-      summary: Log out the current user
-      description: Invalidates the current API token.
+      summary: Revoke the current API token
       responses:
         '204':
-          description: Logged out successfully.
+          description: Logged out
         '401':
           $ref: '#/components/responses/Unauthorized'
-
   /auth/me:
     get:
       tags: [Auth]
@@ -120,17 +107,12 @@ paths:
           $ref: '#/components/responses/UserResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
   /auth/profile:
     patch:
       tags: [Auth]
-      summary: Update the authenticated user's profile
+      summary: Update the authenticated user profile
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateProfileRequest'
+        $ref: '#/components/requestBodies/UpdateProfile'
       responses:
         '200':
           $ref: '#/components/responses/UserResponse'
@@ -138,46 +120,35 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /auth/password:
     post:
       tags: [Auth]
-      summary: Change the authenticated user's password
+      summary: Change the authenticated user password
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
+        $ref: '#/components/requestBodies/ChangePassword'
       responses:
         '204':
-          description: Password changed successfully.
+          description: Password changed
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /users:
     get:
       tags: [Users]
       summary: List users
       parameters:
+        - $ref: '#/components/parameters/SearchQuery'
         - $ref: '#/components/parameters/PerPage'
-        - name: q
-          in: query
-          description: Search term matched against name and email.
-          schema:
-            type: string
       responses:
         '200':
-          description: Paginated list of users.
+          description: Paginated list of users
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserCollection'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
   /users/{user}:
     parameters:
       - $ref: '#/components/parameters/UserId'
@@ -193,14 +164,9 @@ paths:
           $ref: '#/components/responses/NotFound'
     patch:
       tags: [Users]
-      summary: Update a user
-      description: Requires the admin role.
+      summary: Update a user (admin only)
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateUserRequest'
+        $ref: '#/components/requestBodies/UpdateUser'
       responses:
         '200':
           $ref: '#/components/responses/UserResponse'
@@ -208,29 +174,31 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
       tags: [Users]
-      summary: Delete a user
-      description: Requires the admin role.
+      summary: Delete a user (admin only)
       responses:
         '204':
-          description: User deleted.
+          description: User deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /teams:
     get:
       tags: [Teams]
-      summary: List the authenticated user's teams
+      summary: List teams the authenticated user belongs to
       parameters:
         - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
-          description: Paginated list of teams.
+          description: Paginated list of teams
           content:
             application/json:
               schema:
@@ -241,11 +209,7 @@ paths:
       tags: [Teams]
       summary: Create a team
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StoreTeamRequest'
+        $ref: '#/components/requestBodies/StoreTeam'
       responses:
         '201':
           $ref: '#/components/responses/TeamResponse'
@@ -255,7 +219,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /teams/{team}:
     parameters:
       - $ref: '#/components/parameters/TeamId'
@@ -275,11 +238,7 @@ paths:
       tags: [Teams]
       summary: Update a team
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateTeamRequest'
+        $ref: '#/components/requestBodies/UpdateTeam'
       responses:
         '200':
           $ref: '#/components/responses/TeamResponse'
@@ -287,6 +246,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
@@ -294,12 +255,13 @@ paths:
       summary: Delete a team
       responses:
         '204':
-          description: Team deleted.
+          description: Team deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /teams/{team}/members:
     parameters:
       - $ref: '#/components/parameters/TeamId'
@@ -308,7 +270,7 @@ paths:
       summary: List team members
       responses:
         '200':
-          description: List of team members.
+          description: List of team members
           content:
             application/json:
               schema:
@@ -317,15 +279,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     post:
       tags: [Team Members]
-      summary: Invite a member to a team
+      summary: Invite a member to the team
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InviteTeamMemberRequest'
+        $ref: '#/components/requestBodies/InviteTeamMember'
       responses:
         '201':
           $ref: '#/components/responses/TeamMemberResponse'
@@ -333,22 +293,19 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /teams/{team}/members/{user}:
     parameters:
       - $ref: '#/components/parameters/TeamId'
       - $ref: '#/components/parameters/UserId'
     patch:
       tags: [Team Members]
-      summary: Update a team member's role
+      summary: Update a team member role
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateTeamMemberRequest'
+        $ref: '#/components/requestBodies/UpdateTeamMember'
       responses:
         '200':
           $ref: '#/components/responses/TeamMemberResponse'
@@ -356,30 +313,33 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
       tags: [Team Members]
-      summary: Remove a member from a team
+      summary: Remove a member from the team
       responses:
         '204':
-          description: Member removed.
+          description: Member removed
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /teams/{team}/projects:
     parameters:
       - $ref: '#/components/parameters/TeamId'
     get:
       tags: [Projects]
-      summary: List projects in a team
+      summary: List projects within a team
       parameters:
         - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
-          description: Paginated list of projects.
+          description: Paginated list of projects
           content:
             application/json:
               schema:
@@ -388,15 +348,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     post:
       tags: [Projects]
-      summary: Create a project in a team
+      summary: Create a project within a team
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StoreProjectRequest'
+        $ref: '#/components/requestBodies/StoreProject'
       responses:
         '201':
           $ref: '#/components/responses/ProjectResponse'
@@ -404,9 +362,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /projects/{project}:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -426,11 +385,7 @@ paths:
       tags: [Projects]
       summary: Update a project
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateProjectRequest'
+        $ref: '#/components/requestBodies/UpdateProject'
       responses:
         '200':
           $ref: '#/components/responses/ProjectResponse'
@@ -438,6 +393,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
@@ -445,12 +402,13 @@ paths:
       summary: Delete a project
       responses:
         '204':
-          description: Project deleted.
+          description: Project deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /projects/{project}/archive:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -464,7 +422,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /projects/{project}/restore:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -478,7 +437,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /projects/{project}/stats:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -487,19 +447,17 @@ paths:
       summary: Get project statistics
       responses:
         '200':
-          description: Aggregate statistics for the project.
+          description: Project statistics
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/ProjectStats'
+                $ref: '#/components/schemas/ProjectStats'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /projects/{project}/members:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -508,7 +466,7 @@ paths:
       summary: List project members
       responses:
         '200':
-          description: List of project members.
+          description: List of project members
           content:
             application/json:
               schema:
@@ -517,15 +475,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     post:
       tags: [Project Members]
-      summary: Add a member to a project
+      summary: Add a member to the project
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StoreProjectMemberRequest'
+        $ref: '#/components/requestBodies/StoreProjectMember'
       responses:
         '201':
           $ref: '#/components/responses/ProjectMemberResponse'
@@ -533,22 +489,19 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /projects/{project}/members/{user}:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
       - $ref: '#/components/parameters/UserId'
     patch:
       tags: [Project Members]
-      summary: Update a project member's role
+      summary: Update a project member role
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateProjectMemberRequest'
+        $ref: '#/components/requestBodies/UpdateProjectMember'
       responses:
         '200':
           $ref: '#/components/responses/ProjectMemberResponse'
@@ -556,19 +509,22 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
       tags: [Project Members]
-      summary: Remove a member from a project
+      summary: Remove a member from the project
       responses:
         '204':
-          description: Member removed.
+          description: Member removed
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /projects/{project}/activity:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -579,7 +535,7 @@ paths:
         - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
-          description: Paginated activity log entries.
+          description: Paginated activity log entries
           content:
             application/json:
               schema:
@@ -588,7 +544,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /projects/{project}/labels:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -597,7 +554,7 @@ paths:
       summary: List project labels
       responses:
         '200':
-          description: List of labels.
+          description: List of labels
           content:
             application/json:
               schema:
@@ -606,15 +563,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     post:
       tags: [Labels]
-      summary: Create a label
+      summary: Create a label in a project
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StoreLabelRequest'
+        $ref: '#/components/requestBodies/StoreLabel'
       responses:
         '201':
           $ref: '#/components/responses/LabelResponse'
@@ -622,9 +577,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /labels/{label}:
     parameters:
       - $ref: '#/components/parameters/LabelId'
@@ -632,11 +588,7 @@ paths:
       tags: [Labels]
       summary: Update a label
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateLabelRequest'
+        $ref: '#/components/requestBodies/UpdateLabel'
       responses:
         '200':
           $ref: '#/components/responses/LabelResponse'
@@ -644,6 +596,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
@@ -651,71 +605,71 @@ paths:
       summary: Delete a label
       responses:
         '204':
-          description: Label deleted.
+          description: Label deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /projects/{project}/tasks:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
       tags: [Tasks]
-      summary: List tasks in a project
+      summary: List tasks within a project
       parameters:
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/TaskStatus'
-        - name: priority
-          in: query
-          schema:
-            $ref: '#/components/schemas/TaskPriority'
+        - $ref: '#/components/parameters/TaskStatusFilter'
+        - $ref: '#/components/parameters/TaskPriorityFilter'
         - name: assignee_id
           in: query
+          required: false
           schema:
             type: integer
         - name: label_id
           in: query
+          required: false
           schema:
             type: integer
         - name: due_before
           in: query
+          required: false
           schema:
             type: string
             format: date
         - name: due_after
           in: query
+          required: false
           schema:
             type: string
             format: date
-        - name: q
-          in: query
-          description: Search term matched against title and description.
-          schema:
-            type: string
+        - $ref: '#/components/parameters/SearchQuery'
         - name: overdue
           in: query
+          required: false
           schema:
             type: boolean
         - name: parent_id
           in: query
+          required: false
           schema:
             type: integer
         - name: root
           in: query
-          description: When true, returns only top-level tasks (no parent).
+          description: When true, only return top-level tasks (no parent).
+          required: false
           schema:
             type: boolean
         - name: sort
           in: query
+          required: false
           schema:
             type: string
             enum: [created_at, due_date, priority, position, title]
             default: position
         - name: dir
           in: query
+          required: false
           schema:
             type: string
             enum: [asc, desc]
@@ -723,7 +677,7 @@ paths:
         - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
-          description: Paginated list of tasks.
+          description: Paginated list of tasks
           content:
             application/json:
               schema:
@@ -732,17 +686,15 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
     post:
       tags: [Tasks]
       summary: Create a task in a project
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StoreTaskRequest'
+        $ref: '#/components/requestBodies/StoreTask'
       responses:
         '201':
           $ref: '#/components/responses/TaskResponse'
@@ -750,9 +702,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /tasks/{task}:
     parameters:
       - $ref: '#/components/parameters/TaskId'
@@ -772,11 +725,7 @@ paths:
       tags: [Tasks]
       summary: Update a task
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateTaskRequest'
+        $ref: '#/components/requestBodies/UpdateTask'
       responses:
         '200':
           $ref: '#/components/responses/TaskResponse'
@@ -784,6 +733,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
@@ -791,12 +742,13 @@ paths:
       summary: Delete a task
       responses:
         '204':
-          description: Task deleted.
+          description: Task deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /tasks/{task}/assign:
     parameters:
       - $ref: '#/components/parameters/TaskId'
@@ -804,11 +756,7 @@ paths:
       tags: [Tasks]
       summary: Assign a task to a user
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AssignTaskRequest'
+        $ref: '#/components/requestBodies/AssignTask'
       responses:
         '200':
           $ref: '#/components/responses/TaskResponse'
@@ -816,15 +764,16 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /tasks/{task}/unassign:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
       tags: [Tasks]
-      summary: Unassign a task
+      summary: Remove the assignee from a task
       responses:
         '200':
           $ref: '#/components/responses/TaskResponse'
@@ -832,19 +781,16 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /tasks/{task}/status:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
       tags: [Tasks]
-      summary: Transition a task's status
+      summary: Transition the status of a task
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransitionStatusRequest'
+        $ref: '#/components/requestBodies/TransitionStatus'
       responses:
         '200':
           $ref: '#/components/responses/TaskResponse'
@@ -852,21 +798,18 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /tasks/{task}/priority:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
       tags: [Tasks]
-      summary: Update a task's priority
+      summary: Update the priority of a task
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdatePriorityRequest'
+        $ref: '#/components/requestBodies/UpdatePriority'
       responses:
         '200':
           $ref: '#/components/responses/TaskResponse'
@@ -874,21 +817,18 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /tasks/{task}/labels:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
       tags: [Tasks]
-      summary: Sync the labels on a task
+      summary: Sync the labels of a task
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SyncLabelsRequest'
+        $ref: '#/components/requestBodies/SyncLabels'
       responses:
         '200':
           $ref: '#/components/responses/TaskResponse'
@@ -896,18 +836,19 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /tasks/{task}/subtasks:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     get:
       tags: [Tasks]
-      summary: List a task's subtasks
+      summary: List subtasks of a task
       responses:
         '200':
-          description: List of subtasks.
+          description: List of subtasks
           content:
             application/json:
               schema:
@@ -916,15 +857,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     post:
       tags: [Tasks]
       summary: Create a subtask under a task
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StoreTaskRequest'
+        $ref: '#/components/requestBodies/StoreTask'
       responses:
         '201':
           $ref: '#/components/responses/TaskResponse'
@@ -932,21 +871,18 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /tasks/{task}/reorder:
     parameters:
       - $ref: '#/components/parameters/TaskId'
     post:
       tags: [Tasks]
-      summary: Reorder a task to a new position
+      summary: Reorder a task within its list
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReorderTaskRequest'
+        $ref: '#/components/requestBodies/ReorderTask'
       responses:
         '200':
           $ref: '#/components/responses/TaskResponse'
@@ -954,9 +890,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /tasks/{task}/activity:
     parameters:
       - $ref: '#/components/parameters/TaskId'
@@ -967,7 +904,7 @@ paths:
         - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
-          description: Paginated activity log entries.
+          description: Paginated activity log entries
           content:
             application/json:
               schema:
@@ -976,7 +913,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /tasks/{task}/comments:
     parameters:
       - $ref: '#/components/parameters/TaskId'
@@ -987,7 +925,7 @@ paths:
         - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
-          description: Paginated list of comments.
+          description: Paginated list of comments
           content:
             application/json:
               schema:
@@ -996,15 +934,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     post:
       tags: [Comments]
-      summary: Create a comment on a task
+      summary: Add a comment to a task
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StoreCommentRequest'
+        $ref: '#/components/requestBodies/StoreComment'
       responses:
         '201':
           $ref: '#/components/responses/CommentResponse'
@@ -1012,9 +948,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /comments/{comment}:
     parameters:
       - $ref: '#/components/parameters/CommentId'
@@ -1022,11 +959,7 @@ paths:
       tags: [Comments]
       summary: Update a comment
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateCommentRequest'
+        $ref: '#/components/requestBodies/UpdateComment'
       responses:
         '200':
           $ref: '#/components/responses/CommentResponse'
@@ -1034,6 +967,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
@@ -1041,12 +976,13 @@ paths:
       summary: Delete a comment
       responses:
         '204':
-          description: Comment deleted.
+          description: Comment deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /tasks/{task}/attachments:
     parameters:
       - $ref: '#/components/parameters/TaskId'
@@ -1057,7 +993,7 @@ paths:
         - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
-          description: Paginated list of attachments.
+          description: Paginated list of attachments
           content:
             application/json:
               schema:
@@ -1066,6 +1002,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     post:
       tags: [Attachments]
       summary: Upload an attachment to a task
@@ -1074,13 +1012,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              type: object
-              required: [file]
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: File to upload (max 20 MB).
+              $ref: '#/components/schemas/StoreAttachmentRequest'
       responses:
         '201':
           $ref: '#/components/responses/AttachmentResponse'
@@ -1088,9 +1020,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
   /attachments/{attachment}/download:
     parameters:
       - $ref: '#/components/parameters/AttachmentId'
@@ -1099,7 +1032,7 @@ paths:
       summary: Download an attachment
       responses:
         '200':
-          description: The attachment file contents.
+          description: The attachment file stream
           content:
             application/octet-stream:
               schema:
@@ -1111,7 +1044,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-
   /attachments/{attachment}:
     parameters:
       - $ref: '#/components/parameters/AttachmentId'
@@ -1120,40 +1052,41 @@ paths:
       summary: Delete an attachment
       responses:
         '204':
-          description: Attachment deleted.
+          description: Attachment deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /notifications:
     get:
       tags: [Notifications]
-      summary: List the authenticated user's notifications
+      summary: List notifications for the authenticated user
       parameters:
         - name: unread
           in: query
-          description: When true, returns only unread notifications.
+          description: When true, return only unread notifications.
+          required: false
           schema:
             type: boolean
         - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
-          description: Paginated list of notifications.
+          description: Paginated list of notifications
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationCollection'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
   /notifications/read-all:
     post:
       tags: [Notifications]
       summary: Mark all notifications as read
       responses:
         '200':
-          description: Count of notifications marked as read.
+          description: Number of notifications updated
           content:
             application/json:
               schema:
@@ -1163,7 +1096,6 @@ paths:
                     type: integer
         '401':
           $ref: '#/components/responses/Unauthorized'
-
   /notifications/{notification}/read:
     parameters:
       - $ref: '#/components/parameters/NotificationId'
@@ -1172,19 +1104,17 @@ paths:
       summary: Mark a notification as read
       responses:
         '200':
-          description: The updated notification.
+          description: The updated notification
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Notification'
+                $ref: '#/components/schemas/NotificationEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-    
+        '404':
+          $ref: '#/components/responses/NotFound'
   /notifications/{notification}:
     parameters:
       - $ref: '#/components/parameters/NotificationId'
@@ -1193,62 +1123,65 @@ paths:
       summary: Delete a notification
       responses:
         '204':
-          description: Notification deleted.
+          description: Notification deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
   /activity:
     get:
       tags: [Activity]
-      summary: List global activity visible to the user
+      summary: List activity visible to the authenticated user
       parameters:
         - name: team_id
           in: query
+          required: false
           schema:
             type: integer
         - name: project_id
           in: query
+          required: false
           schema:
             type: integer
         - name: causer_id
           in: query
+          required: false
           schema:
             type: integer
         - name: action
           in: query
+          required: false
           schema:
             type: string
         - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
-          description: Paginated activity log entries.
+          description: Paginated activity log entries
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ActivityLogCollection'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
   /dashboard:
     get:
       tags: [Dashboard]
-      summary: Get the authenticated user's dashboard summary
+      summary: Get the personal dashboard for the authenticated user
       responses:
         '200':
-          description: Dashboard summary including task counts and upcoming tasks.
+          description: Dashboard data
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DashboardSummary'
+                $ref: '#/components/schemas/Dashboard'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
   /search:
     get:
       tags: [Search]
-      summary: Search projects, tasks, and comments
+      summary: Global search across projects, tasks and comments
       parameters:
         - name: q
           in: query
@@ -1260,7 +1193,7 @@ paths:
             maxLength: 255
       responses:
         '200':
-          description: Search results grouped by resource type.
+          description: Search results
           content:
             application/json:
               schema:
@@ -1269,75 +1202,245 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/ValidationError'
-
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       description: >-
-        API token issued at registration or login. Send it in the
-        Authorization header as a bearer token.
-
+        API token issued by the register/login endpoints. Provide it as
+        an Authorization header bearer token.
   parameters:
     PerPage:
       name: per_page
       in: query
       description: Number of items per page (1-100, default 20).
+      required: false
       schema:
         type: integer
         minimum: 1
         maximum: 100
         default: 20
+    SearchQuery:
+      name: q
+      in: query
+      description: Free-text search term.
+      required: false
+      schema:
+        type: string
+    TaskStatusFilter:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/TaskStatus'
+    TaskPriorityFilter:
+      name: priority
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/TaskPriority'
     UserId:
       name: user
       in: path
       required: true
+      description: User identifier.
       schema:
         type: integer
     TeamId:
       name: team
       in: path
       required: true
+      description: Team identifier.
       schema:
         type: integer
     ProjectId:
       name: project
       in: path
       required: true
+      description: Project identifier.
       schema:
         type: integer
     LabelId:
       name: label
       in: path
       required: true
+      description: Label identifier.
       schema:
         type: integer
     TaskId:
       name: task
       in: path
       required: true
+      description: Task identifier.
       schema:
         type: integer
     CommentId:
       name: comment
       in: path
       required: true
+      description: Comment identifier.
       schema:
         type: integer
     AttachmentId:
       name: attachment
       in: path
       required: true
+      description: Attachment identifier.
       schema:
         type: integer
     NotificationId:
       name: notification
       in: path
       required: true
+      description: Notification identifier.
       schema:
         type: integer
-
+  requestBodies:
+    Register:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisterRequest'
+    Login:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginRequest'
+    UpdateProfile:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateProfileRequest'
+    ChangePassword:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChangePasswordRequest'
+    UpdateUser:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateUserRequest'
+    StoreTeam:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StoreTeamRequest'
+    UpdateTeam:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateTeamRequest'
+    InviteTeamMember:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InviteTeamMemberRequest'
+    UpdateTeamMember:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateTeamMemberRequest'
+    StoreProject:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StoreProjectRequest'
+    UpdateProject:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateProjectRequest'
+    StoreProjectMember:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StoreProjectMemberRequest'
+    UpdateProjectMember:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateProjectMemberRequest'
+    StoreLabel:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StoreLabelRequest'
+    UpdateLabel:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateLabelRequest'
+    StoreTask:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StoreTaskRequest'
+    UpdateTask:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateTaskRequest'
+    AssignTask:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AssignTaskRequest'
+    TransitionStatus:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransitionStatusRequest'
+    UpdatePriority:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdatePriorityRequest'
+    SyncLabels:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SyncLabelsRequest'
+    ReorderTask:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReorderTaskRequest'
+    StoreComment:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StoreCommentRequest'
+    UpdateComment:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateCommentRequest'
   responses:
     Unauthorized:
       description: Authentication is required or the token is invalid.
@@ -1346,7 +1449,7 @@ components:
           schema:
             $ref: '#/components/schemas/MessageResponse'
     Forbidden:
-      description: The authenticated user is not authorized for this action.
+      description: The authenticated user is not allowed to perform this action.
       content:
         application/json:
           schema:
@@ -1358,117 +1461,85 @@ components:
           schema:
             $ref: '#/components/schemas/MessageResponse'
     ValidationError:
-      description: The request failed validation.
+      description: The submitted data failed validation.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ValidationErrorResponse'
     UserResponse:
-      description: A single user.
+      description: A single user
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              data:
-                $ref: '#/components/schemas/User'
+            $ref: '#/components/schemas/UserEnvelope'
     TeamResponse:
-      description: A single team.
+      description: A single team
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              data:
-                $ref: '#/components/schemas/Team'
+            $ref: '#/components/schemas/TeamEnvelope'
     TeamMemberResponse:
-      description: A single team member.
+      description: A single team member
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              data:
-                $ref: '#/components/schemas/TeamMember'
+            $ref: '#/components/schemas/TeamMemberEnvelope'
     ProjectResponse:
-      description: A single project.
+      description: A single project
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              data:
-                $ref: '#/components/schemas/Project'
+            $ref: '#/components/schemas/ProjectEnvelope'
     ProjectMemberResponse:
-      description: A single project member.
+      description: A single project member
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              data:
-                $ref: '#/components/schemas/ProjectMember'
+            $ref: '#/components/schemas/ProjectMemberEnvelope'
     LabelResponse:
-      description: A single label.
+      description: A single label
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              data:
-                $ref: '#/components/schemas/Label'
+            $ref: '#/components/schemas/LabelEnvelope'
     TaskResponse:
-      description: A single task.
+      description: A single task
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              data:
-                $ref: '#/components/schemas/Task'
+            $ref: '#/components/schemas/TaskEnvelope'
     CommentResponse:
-      description: A single comment.
+      description: A single comment
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              data:
-                $ref: '#/components/schemas/Comment'
+            $ref: '#/components/schemas/CommentEnvelope'
     AttachmentResponse:
-      description: A single attachment.
+      description: A single attachment
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              data:
-                $ref: '#/components/schemas/Attachment'
-
+            $ref: '#/components/schemas/AttachmentEnvelope'
   schemas:
-    MessageResponse:
-      type: object
-      description: Generic message payload.
-      properties:
-        message:
-          type: string
-
-    ValidationErrorResponse:
-      type: object
-      description: Laravel validation error payload.
-      properties:
-        message:
-          type: string
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
-
+    TaskStatus:
+      type: string
+      description: Lifecycle status of a task.
+      enum: [todo, in_progress, in_review, done, cancelled]
+    TaskPriority:
+      type: string
+      description: Priority of a task.
+      enum: [low, medium, high, urgent]
+    TeamRole:
+      type: string
+      description: Role of a member within a team.
+      enum: [owner, admin, member]
+    ProjectRole:
+      type: string
+      description: Role of a member within a project.
+      enum: [lead, contributor, viewer]
     PaginationLinks:
       type: object
-      description: Pagination navigation links.
+      description: Laravel pagination links.
       properties:
         first:
           type: [string, "null"]
@@ -1478,10 +1549,9 @@ components:
           type: [string, "null"]
         next:
           type: [string, "null"]
-
     PaginationMeta:
       type: object
-      description: Pagination metadata.
+      description: Laravel pagination metadata.
       properties:
         current_page:
           type: integer
@@ -1497,14 +1567,30 @@ components:
           type: [integer, "null"]
         total:
           type: integer
-
+    MessageResponse:
+      type: object
+      description: A generic message wrapper used for errors.
+      properties:
+        message:
+          type: string
+    ValidationErrorResponse:
+      type: object
+      description: Laravel validation error response.
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
     HealthStatus:
       type: object
-      description: Service health and runtime metadata.
+      description: Health check payload.
       properties:
         status:
           type: string
-          examples: [ok]
         timestamp:
           type: string
           format: date-time
@@ -1516,10 +1602,9 @@ components:
           type: string
         debug:
           type: boolean
-
     User:
       type: object
-      description: A user account. The email field is only present for the user themselves or admins.
+      description: A user account.
       properties:
         id:
           type: integer
@@ -1528,6 +1613,7 @@ components:
         email:
           type: string
           format: email
+          description: Only present when viewing your own profile or as an admin.
         role:
           type: string
           enum: [admin, member]
@@ -1538,10 +1624,33 @@ components:
         created_at:
           type: [string, "null"]
           format: date-time
-
+    UserEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+    UserCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+    AuthResponse:
+      type: object
+      description: Authenticated user plus issued API token.
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
     Team:
       type: object
-      description: A team that owns projects and has members.
+      description: A team that owns projects and members.
       properties:
         id:
           type: integer
@@ -1565,10 +1674,25 @@ components:
         updated_at:
           type: [string, "null"]
           format: date-time
-
+    TeamEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Team'
+    TeamCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
     TeamMember:
       type: object
-      description: A member of a team with their role.
+      description: Membership of a user within a team.
       properties:
         id:
           type: integer
@@ -1577,8 +1701,7 @@ components:
         user_id:
           type: [integer, "null"]
         role:
-          type: [string, "null"]
-          enum: [owner, admin, member, null]
+          $ref: '#/components/schemas/TeamRole'
         user:
           $ref: '#/components/schemas/User'
         created_at:
@@ -1587,7 +1710,18 @@ components:
         updated_at:
           type: [string, "null"]
           format: date-time
-
+    TeamMemberEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TeamMember'
+    TeamMemberCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMember'
     Project:
       type: object
       description: A project belonging to a team.
@@ -1623,10 +1757,25 @@ components:
         updated_at:
           type: [string, "null"]
           format: date-time
-
+    ProjectEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Project'
+    ProjectCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
     ProjectMember:
       type: object
-      description: A member of a project with their role.
+      description: Membership of a user within a project.
       properties:
         id:
           type: integer
@@ -1635,8 +1784,7 @@ components:
         user_id:
           type: [integer, "null"]
         role:
-          type: [string, "null"]
-          enum: [lead, contributor, viewer, null]
+          $ref: '#/components/schemas/ProjectRole'
         user:
           $ref: '#/components/schemas/User'
         created_at:
@@ -1645,33 +1793,47 @@ components:
         updated_at:
           type: [string, "null"]
           format: date-time
-
+    ProjectMemberEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectMember'
+    ProjectMemberCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectMember'
     ProjectStats:
       type: object
-      description: Aggregate statistics for a project.
+      description: Aggregated statistics for a project.
       properties:
-        tasks_total:
-          type: integer
-        tasks_by_status:
+        data:
           type: object
-          additionalProperties:
-            type: integer
-        tasks_by_priority:
-          type: object
-          additionalProperties:
-            type: integer
-        overdue:
-          type: integer
-        completed:
-          type: integer
-        completion_pct:
-          type: number
-        members:
-          type: integer
-
+          properties:
+            tasks_total:
+              type: integer
+            tasks_by_status:
+              type: object
+              additionalProperties:
+                type: integer
+            tasks_by_priority:
+              type: object
+              additionalProperties:
+                type: integer
+            overdue:
+              type: integer
+            completed:
+              type: integer
+            completion_pct:
+              type: number
+              format: float
+            members:
+              type: integer
     Label:
       type: object
-      description: A label that can be applied to tasks within a project.
+      description: A label that can be attached to tasks within a project.
       properties:
         id:
           type: integer
@@ -1687,20 +1849,21 @@ components:
         updated_at:
           type: [string, "null"]
           format: date-time
-
-    TaskStatus:
-      type: string
-      description: Task lifecycle status.
-      enum: [todo, in_progress, in_review, done, cancelled]
-
-    TaskPriority:
-      type: string
-      description: Task priority level.
-      enum: [low, medium, high, urgent]
-
+    LabelEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Label'
+    LabelCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
     Task:
       type: object
-      description: A task or subtask within a project.
+      description: A task with its full detail, including description and labels.
       properties:
         id:
           type: integer
@@ -1750,10 +1913,9 @@ components:
         updated_at:
           type: [string, "null"]
           format: date-time
-
     TaskListItem:
       type: object
-      description: A lighter task representation used in list responses (omits description).
+      description: A lightweight task representation omitting the description.
       properties:
         id:
           type: integer
@@ -1801,10 +1963,25 @@ components:
         updated_at:
           type: [string, "null"]
           format: date-time
-
+    TaskEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Task'
+    TaskListCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskListItem'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
     Comment:
       type: object
-      description: A comment on a task.
+      description: A comment posted on a task.
       properties:
         id:
           type: integer
@@ -1825,7 +2002,22 @@ components:
         updated_at:
           type: [string, "null"]
           format: date-time
-
+    CommentEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Comment'
+    CommentCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
     Attachment:
       type: object
       description: A file attached to a task.
@@ -1846,14 +2038,28 @@ components:
           $ref: '#/components/schemas/User'
         download_url:
           type: string
-          format: uri
         created_at:
           type: [string, "null"]
           format: date-time
-
+    AttachmentEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Attachment'
+    AttachmentCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
     ActivityLog:
       type: object
-      description: An activity log entry describing an action taken on a subject.
+      description: An entry in the activity log.
       properties:
         id:
           type: integer
@@ -1877,10 +2083,20 @@ components:
         created_at:
           type: [string, "null"]
           format: date-time
-
+    ActivityLogCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityLog'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
     Notification:
       type: object
-      description: An in-app notification for a user.
+      description: A user notification.
       properties:
         id:
           type: integer
@@ -1895,128 +2111,13 @@ components:
         created_at:
           type: [string, "null"]
           format: date-time
-
-    UserCollection:
+    NotificationEnvelope:
       type: object
-      description: Paginated collection of users.
       properties:
         data:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        links:
-          $ref: '#/components/schemas/PaginationLinks'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-
-    TeamCollection:
-      type: object
-      description: Paginated collection of teams.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Team'
-        links:
-          $ref: '#/components/schemas/PaginationLinks'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-
-    TeamMemberCollection:
-      type: object
-      description: Collection of team members.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/TeamMember'
-
-    ProjectCollection:
-      type: object
-      description: Paginated collection of projects.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Project'
-        links:
-          $ref: '#/components/schemas/PaginationLinks'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-
-    ProjectMemberCollection:
-      type: object
-      description: Collection of project members.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProjectMember'
-
-    LabelCollection:
-      type: object
-      description: Collection of labels.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-
-    TaskListCollection:
-      type: object
-      description: Paginated collection of tasks.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/TaskListItem'
-        links:
-          $ref: '#/components/schemas/PaginationLinks'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-
-    CommentCollection:
-      type: object
-      description: Paginated collection of comments.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Comment'
-        links:
-          $ref: '#/components/schemas/PaginationLinks'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-
-    AttachmentCollection:
-      type: object
-      description: Paginated collection of attachments.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment'
-        links:
-          $ref: '#/components/schemas/PaginationLinks'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-
-    ActivityLogCollection:
-      type: object
-      description: Paginated collection of activity log entries.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ActivityLog'
-        links:
-          $ref: '#/components/schemas/PaginationLinks'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-
+          $ref: '#/components/schemas/Notification'
     NotificationCollection:
       type: object
-      description: Paginated collection of notifications.
       properties:
         data:
           type: array
@@ -2026,10 +2127,9 @@ components:
           $ref: '#/components/schemas/PaginationLinks'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
-
-    DashboardSummary:
+    Dashboard:
       type: object
-      description: Dashboard summary for the authenticated user.
+      description: Personal dashboard payload for the authenticated user.
       properties:
         my_tasks_by_status:
           type: object
@@ -2051,10 +2151,9 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/ActivityLog'
-
     SearchResults:
       type: object
-      description: Search results grouped by resource type.
+      description: Results of a global search.
       properties:
         projects:
           type: array
@@ -2068,16 +2167,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Comment'
-
-    AuthResponse:
-      type: object
-      description: Authentication response containing the user and API token.
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
-        token:
-          type: string
-
     RegisterRequest:
       type: object
       required: [name, email, password]
@@ -2093,7 +2182,6 @@ components:
           type: string
           minLength: 8
           maxLength: 255
-
     LoginRequest:
       type: object
       required: [email, password]
@@ -2104,10 +2192,8 @@ components:
           maxLength: 255
         password:
           type: string
-
     UpdateProfileRequest:
       type: object
-      description: Profile fields. All fields are optional.
       properties:
         name:
           type: string
@@ -2118,7 +2204,6 @@ components:
         timezone:
           type: string
           maxLength: 64
-
     ChangePasswordRequest:
       type: object
       required: [current_password, new_password]
@@ -2130,10 +2215,8 @@ components:
           minLength: 8
           maxLength: 255
           description: Must differ from the current password.
-
     UpdateUserRequest:
       type: object
-      description: Admin-only user fields. All fields are optional.
       properties:
         name:
           type: string
@@ -2151,7 +2234,6 @@ components:
         timezone:
           type: string
           maxLength: 64
-
     StoreTeamRequest:
       type: object
       required: [name, slug]
@@ -2165,10 +2247,8 @@ components:
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
         description:
           type: [string, "null"]
-
     UpdateTeamRequest:
       type: object
-      description: Team fields. All fields are optional.
       properties:
         name:
           type: string
@@ -2179,7 +2259,6 @@ components:
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
         description:
           type: [string, "null"]
-
     InviteTeamMemberRequest:
       type: object
       required: [email, role]
@@ -2189,17 +2268,13 @@ components:
           format: email
           maxLength: 255
         role:
-          type: string
-          enum: [owner, admin, member]
-
+          $ref: '#/components/schemas/TeamRole'
     UpdateTeamMemberRequest:
       type: object
       required: [role]
       properties:
         role:
-          type: string
-          enum: [owner, admin, member]
-
+          $ref: '#/components/schemas/TeamRole'
     StoreProjectRequest:
       type: object
       required: [name, key]
@@ -2219,10 +2294,8 @@ components:
         color:
           type: [string, "null"]
           maxLength: 32
-
     UpdateProjectRequest:
       type: object
-      description: Project fields. All fields are optional.
       properties:
         name:
           type: string
@@ -2239,7 +2312,6 @@ components:
         color:
           type: [string, "null"]
           maxLength: 32
-
     StoreProjectMemberRequest:
       type: object
       required: [user_id, role]
@@ -2247,17 +2319,13 @@ components:
         user_id:
           type: integer
         role:
-          type: string
-          enum: [lead, contributor, viewer]
-
+          $ref: '#/components/schemas/ProjectRole'
     UpdateProjectMemberRequest:
       type: object
       required: [role]
       properties:
         role:
-          type: string
-          enum: [lead, contributor, viewer]
-
+          $ref: '#/components/schemas/ProjectRole'
     StoreLabelRequest:
       type: object
       required: [name, color]
@@ -2269,10 +2337,8 @@ components:
           type: string
           maxLength: 32
           pattern: "^#?[0-9a-fA-F]{3,8}$"
-
     UpdateLabelRequest:
       type: object
-      description: Label fields. All fields are optional.
       properties:
         name:
           type: string
@@ -2281,7 +2347,6 @@ components:
           type: string
           maxLength: 32
           pattern: "^#?[0-9a-fA-F]{3,8}$"
-
     StoreTaskRequest:
       type: object
       required: [title]
@@ -2309,10 +2374,8 @@ components:
           type: array
           items:
             type: integer
-
     UpdateTaskRequest:
       type: object
-      description: Task fields. All fields are optional.
       properties:
         title:
           type: string
@@ -2333,28 +2396,24 @@ components:
         position:
           type: integer
           minimum: 0
-
     AssignTaskRequest:
       type: object
       required: [user_id]
       properties:
         user_id:
           type: integer
-
     TransitionStatusRequest:
       type: object
       required: [status]
       properties:
         status:
           $ref: '#/components/schemas/TaskStatus'
-
     UpdatePriorityRequest:
       type: object
       required: [priority]
       properties:
         priority:
           $ref: '#/components/schemas/TaskPriority'
-
     SyncLabelsRequest:
       type: object
       required: [label_ids]
@@ -2363,7 +2422,6 @@ components:
           type: array
           items:
             type: integer
-
     ReorderTaskRequest:
       type: object
       required: [position]
@@ -2371,7 +2429,6 @@ components:
         position:
           type: integer
           minimum: 0
-
     StoreCommentRequest:
       type: object
       required: [body]
@@ -2379,10 +2436,17 @@ components:
         body:
           type: string
           maxLength: 10000
-
     UpdateCommentRequest:
       type: object
       properties:
         body:
           type: string
           maxLength: 10000
+    StoreAttachmentRequest:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+          description: The file to upload (max 20 MB).
